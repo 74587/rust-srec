@@ -17,6 +17,12 @@ export function getPlatformFromUrl(url: string) {
   if (url.includes('douyu')) return 'douyu';
   if (url.includes('bilibili') || url.includes('hdslb.com')) return 'bilibili';
   if (url.includes('acfun')) return 'acfun';
+  if (url.includes('tiktok.com')) return 'tiktok';
+  if (url.includes('pandalive.co.kr')) return 'pandatv';
+  if (url.includes('picarto.tv')) return 'picarto';
+  if (url.includes('xhslink.com')) return 'redbook';
+  if (url.includes('twitcasting.tv')) return 'twitcasting';
+  if (url.includes('weibo.com')) return 'weibo';
   return 'other';
 }
 
