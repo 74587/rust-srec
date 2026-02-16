@@ -97,7 +97,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p upload
-          for bin in $(echo '${{ inputs.binaries }}' | jq -r '.[]'); do
+          for bin in $(echo '${{ inputs.binaries }}' | jq -r '.[]' | tr -d '\r'); do
             src="target/${{ matrix.target }}/release/${bin}"
             if [[ "${{ matrix.target }}" == *windows* ]]; then
               src="${src}.exe"
