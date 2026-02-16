@@ -130,107 +130,12 @@ jobs:
         run: sccache --show-stats || true
 
   build:
-    name: Build
     needs: check-and-test
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            artifact_name: rust-srec
-            asset_name: rust-srec-linux-musl-amd64
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            artifact_name: rust-srec
-            asset_name: rust-srec-linux-amd64
-          - os: ubuntu-22.04-arm
-            target: aarch64-unknown-linux-musl
-            artifact_name: rust-srec
-            asset_name: rust-srec-linux-musl-arm64
-          - os: ubuntu-22.04-arm
-            target: aarch64-unknown-linux-gnu
-            artifact_name: rust-srec
-            asset_name: rust-srec-linux-arm64
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact_name: rust-srec.exe
-            asset_name: rust-srec-windows-amd64.exe
-          - os: macos-15-intel
-            target: x86_64-apple-darwin
-            artifact_name: rust-srec
-            asset_name: rust-srec-macos-amd64
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            artifact_name: rust-srec
-            asset_name: rust-srec-macos-arm64
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Enable sccache
-        if: runner.os != 'macOS' || runner.arch == 'ARM64'
-        shell: pwsh
-        run: |
-          "RUSTC_WRAPPER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - uses: mozilla-actions/sccache-action@v0.0.9
-        if: runner.os != 'macOS' || runner.arch == 'ARM64'
-        with:
-          version: "v0.13.0"
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-      - uses: ./.github/actions/setup-protoc
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: ci
-          key: ${{ matrix.target }}
-      - name: Install build dependencies on Linux
-        if: contains(matrix.os, 'ubuntu') && !contains(matrix.target, 'musl')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libssl-dev pkg-config
-      - name: Install musl-tools
-        if: contains(matrix.target, 'musl')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools musl-dev
-      - name: Build
-        if: "!contains(matrix.target, 'musl')"
-        run: cargo build -p rust-srec --locked --release --target ${{ matrix.target }} --bins --features tls-native-fallback
-      - name: Build (musl static)
-        if: contains(matrix.target, 'musl')
-        env:
-          CC: musl-gcc
-        run: cargo build -p rust-srec --locked --release --target ${{ matrix.target }} --features static-ssl --bins
-      - name: Rename rust-srec-vapid binary
-        shell: bash
-        run: |
-          VAPID_ASSET_NAME="${{ matrix.asset_name }}"
-          VAPID_ASSET_NAME="${VAPID_ASSET_NAME/rust-srec-/rust-srec-vapid-}"
-          echo "VAPID_ASSET_NAME=$VAPID_ASSET_NAME" >> "$GITHUB_ENV"
-          if [[ "${{ matrix.os }}" == windows-* ]]; then
-            cp "target/${{ matrix.target }}/release/rust-srec-vapid.exe" "$VAPID_ASSET_NAME"
-          else
-            cp "target/${{ matrix.target }}/release/rust-srec-vapid" "$VAPID_ASSET_NAME"
-          fi
-      - name: Rename binary
-        shell: bash
-        run: cp "target/${{ matrix.target }}/release/${{ matrix.artifact_name }}" "${{ matrix.asset_name }}"
-      - name: Upload rust-srec-vapid binary
-        uses: actions/upload-artifact@v6
-        with:
-          name: ${{ env.VAPID_ASSET_NAME }}
-          path: ${{ env.VAPID_ASSET_NAME }}
-          if-no-files-found: error
-      - name: Upload binary
-        uses: actions/upload-artifact@v6
-        with:
-          name: ${{ matrix.asset_name }}
-          path: ${{ matrix.asset_name }}
-          if-no-files-found: error
-      - name: sccache stats
-        if: always() && (runner.os != 'macOS' || runner.arch == 'ARM64')
-        run: sccache --show-stats || true
+    uses: ./.github/workflows/build-binaries.yml
+    with:
+      packages: '-p rust-srec --bins'
+      binaries: '["rust-srec", "rust-srec-vapid"]'
+      need_protoc: true
 
   desktop:
     name: Desktop
@@ -241,14 +146,19 @@ jobs:
       matrix:
         include:
           - os: windows-latest
+            target: x86_64-pc-windows-msvc
             args: ''
           - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
             args: ''
           - os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
             args: ''
           - os: macos-15-intel
+            target: x86_64-apple-darwin
             args: '--target x86_64-apple-darwin'
           - os: macos-latest
+            target: aarch64-apple-darwin
             args: '--target aarch64-apple-darwin'
     runs-on: ${{ matrix.os }}
     defaults:
@@ -375,18 +285,7 @@ jobs:
             }
           }
 
-          $os = ($env:RUNNER_OS ?? '').ToLowerInvariant()
-          if (-not $os) { $os = 'windows' }
-
-          $archRaw = $env:RUNNER_ARCH ?? ''
-          $arch = switch ($archRaw.ToUpperInvariant()) {
-            'X64' { 'amd64' }
-            'ARM64' { 'arm64' }
-            Default { $archRaw.ToLowerInvariant() }
-          }
-          if (-not $arch) { $arch = 'amd64' }
-
-          $zipName = "rust-srec-desktop-portable-$os-$arch.zip"
+          $zipName = "rust-srec-desktop-portable-${{ matrix.target }}.zip"
           $zipPath = Join-Path $outDir $zipName
           Compress-Archive -Path (Join-Path $root 'portable/*') -DestinationPath $zipPath -Force
 
@@ -587,7 +486,12 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           path: artifacts
-          pattern: rust-srec-*
+          pattern: binaries-*
+          merge-multiple: true
+      - uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+          pattern: rust-srec-desktop-*
           merge-multiple: true
       - name: Prepare publish assets
         shell: bash
@@ -596,78 +500,78 @@ jobs:
 
           mkdir -p publish
 
-          normalize_desktop_asset_name() {
+          normalize_asset_name() {
             local base="$1"
-            local arch=""
-            local arch_norm=""
 
-            # Portable zip (normalized in the Windows desktop job).
-            if [[ "$base" =~ ^rust-srec-desktop-portable-[a-z]+-(amd64|arm64)\.zip$ ]]; then
+            # CLI binaries with target triples pass through unchanged.
+            if [[ "$base" =~ ^(rust-srec|rust-srec-vapid)-(x86_64|aarch64)-(unknown-linux|apple-darwin|pc-windows) ]]; then
               printf '%s' "$base"
               return 0
             fi
 
-            # Back-compat: old portable zip name.
-            if [[ "$base" =~ ^rust-srec-desktop-portable-rust-srec-v[0-9]+\.[0-9]+\.[0-9]+-Windows-(X64|ARM64)\.zip$ ]]; then
-              arch="${BASH_REMATCH[1]}"
-              case "$arch" in
-                X64) arch_norm="amd64" ;;
-                ARM64) arch_norm="arm64" ;;
-              esac
-              printf 'rust-srec-desktop-portable-windows-%s.zip' "$arch_norm"
+            # Portable zip (already named with target triple).
+            if [[ "$base" =~ ^rust-srec-desktop-portable-(x86_64|aarch64)-.+\.zip$ ]]; then
+              printf '%s' "$base"
               return 0
             fi
 
-            # Linux packages.
-            if [[ "$base" =~ ^rust-srec_[0-9]+\.[0-9]+\.[0-9]+_(amd64|arm64|x86_64|aarch64)\.deb$ ]]; then
-              arch="${BASH_REMATCH[1]}"
+            # Linux .deb
+            if [[ "$base" =~ ^rust-srec_[0-9]+\.[0-9]+\.[0-9]+_(amd64|arm64|aarch64)\.deb$ ]]; then
+              local arch="${BASH_REMATCH[1]}"
+              local target=""
               case "$arch" in
-                amd64|x86_64) arch_norm="amd64" ;;
-                arm64|aarch64) arch_norm="arm64" ;;
+                amd64) target="x86_64-unknown-linux-gnu" ;;
+                arm64|aarch64) target="aarch64-unknown-linux-gnu" ;;
               esac
-              printf 'rust-srec-desktop-linux-%s.deb' "$arch_norm"
+              printf 'rust-srec-desktop-%s.deb' "$target"
               return 0
             fi
 
-            if [[ "$base" =~ ^rust-srec_[0-9]+\.[0-9]+\.[0-9]+_(amd64|arm64|x86_64|aarch64)\.AppImage$ ]]; then
-              arch="${BASH_REMATCH[1]}"
+            # Linux .AppImage
+            if [[ "$base" =~ ^rust-srec_[0-9]+\.[0-9]+\.[0-9]+_(amd64|arm64|aarch64)\.AppImage$ ]]; then
+              local arch="${BASH_REMATCH[1]}"
+              local target=""
               case "$arch" in
-                amd64|x86_64) arch_norm="amd64" ;;
-                arm64|aarch64) arch_norm="arm64" ;;
+                amd64) target="x86_64-unknown-linux-gnu" ;;
+                arm64|aarch64) target="aarch64-unknown-linux-gnu" ;;
               esac
-              printf 'rust-srec-desktop-linux-%s.AppImage' "$arch_norm"
+              printf 'rust-srec-desktop-%s.AppImage' "$target"
               return 0
             fi
 
+            # Linux .rpm
             if [[ "$base" =~ ^rust-srec-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.(x86_64|aarch64)\.rpm$ ]]; then
-              arch="${BASH_REMATCH[1]}"
+              local arch="${BASH_REMATCH[1]}"
+              local target=""
               case "$arch" in
-                x86_64) arch_norm="amd64" ;;
-                aarch64) arch_norm="arm64" ;;
+                x86_64) target="x86_64-unknown-linux-gnu" ;;
+                aarch64) target="aarch64-unknown-linux-gnu" ;;
               esac
-              printf 'rust-srec-desktop-linux-%s.rpm' "$arch_norm"
+              printf 'rust-srec-desktop-%s.rpm' "$target"
               return 0
             fi
 
-            # macOS DMG.
+            # macOS .dmg
             if [[ "$base" =~ ^rust-srec_[0-9]+\.[0-9]+\.[0-9]+_(x64|aarch64|amd64|arm64)\.dmg$ ]]; then
-              arch="${BASH_REMATCH[1]}"
+              local arch="${BASH_REMATCH[1]}"
+              local target=""
               case "$arch" in
-                x64|amd64) arch_norm="amd64" ;;
-                aarch64|arm64) arch_norm="arm64" ;;
+                x64|amd64) target="x86_64-apple-darwin" ;;
+                aarch64|arm64) target="aarch64-apple-darwin" ;;
               esac
-              printf 'rust-srec-desktop-macos-%s.dmg' "$arch_norm"
+              printf 'rust-srec-desktop-%s.dmg' "$target"
               return 0
             fi
 
-            # Windows installers.
+            # Windows .msi
             if [[ "$base" =~ ^rust-srec_[0-9]+\.[0-9]+\.[0-9]+_(x64|amd64)(_.+)?\.msi$ ]]; then
-              printf 'rust-srec-desktop-windows-amd64.msi'
+              printf 'rust-srec-desktop-x86_64-pc-windows-msvc.msi'
               return 0
             fi
 
+            # Windows setup .exe
             if [[ "$base" =~ ^rust-srec_[0-9]+\.[0-9]+\.[0-9]+_(x64|amd64)-setup\.exe$ ]]; then
-              printf 'rust-srec-desktop-windows-amd64-setup.exe'
+              printf 'rust-srec-desktop-x86_64-pc-windows-msvc-setup.exe'
               return 0
             fi
 
@@ -677,10 +581,10 @@ jobs:
           while IFS= read -r -d '' file; do
             base="$(basename "$file")"
             case "$base" in
-              rust-srec-linux-*|rust-srec-macos-*|rust-srec-vapid-linux-*|rust-srec-vapid-macos-*|*.exe|*.dmg|*.msi|*.deb|*.rpm|*.AppImage|*.zip) ;;
+              rust-srec-*|*.exe|*.dmg|*.msi|*.deb|*.rpm|*.AppImage|*.zip) ;;
               *) continue ;;
             esac
-            out="$(normalize_desktop_asset_name "$base")"
+            out="$(normalize_asset_name "$base")"
             cp -v "$file" "publish/$out"
           done < <(find artifacts -maxdepth 2 -type f -print0)
 

@@ -1,0 +1,118 @@
+name: Build Binaries
+
+on:
+  workflow_call:
+    inputs:
+      packages:
+        description: 'Cargo package/binary args, e.g. "-p mesio" or "-p mesio -p strev -p rust-srec --bins"'
+        required: true
+        type: string
+      features_normal:
+        description: 'Features for non-musl targets'
+        required: false
+        type: string
+        default: 'tls-native-fallback'
+      features_musl:
+        description: 'Features for musl targets'
+        required: false
+        type: string
+        default: 'static-ssl'
+      binaries:
+        description: 'JSON array of binary names to extract and upload, e.g. ["mesio"]'
+        required: true
+        type: string
+      need_protoc:
+        description: 'Whether to install protobuf compiler'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_PROFILE_DEV_DEBUG: 0
+  CARGO_PROFILE_TEST_DEBUG: 0
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build:
+    name: Build
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-musl
+          - os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Enable sccache
+        if: runner.os != 'macOS' || runner.arch == 'ARM64'
+        shell: pwsh
+        run: |
+          "RUSTC_WRAPPER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - uses: mozilla-actions/sccache-action@v0.0.9
+        if: runner.os != 'macOS' || runner.arch == 'ARM64'
+        with:
+          version: "v0.13.0"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: ./.github/actions/setup-protoc
+        if: ${{ inputs.need_protoc }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ci
+          key: ${{ matrix.target }}
+      - name: Install build dependencies on Linux
+        if: contains(matrix.os, 'ubuntu') && !contains(matrix.target, 'musl')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config
+      - name: Install musl-tools
+        if: contains(matrix.target, 'musl')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools musl-dev
+      - name: Build
+        if: "!contains(matrix.target, 'musl')"
+        run: cargo build --locked --release --target ${{ matrix.target }} ${{ inputs.packages }} --features ${{ inputs.features_normal }}
+      - name: Build (musl)
+        if: contains(matrix.target, 'musl')
+        env:
+          CC: musl-gcc
+        run: cargo build --locked --release --target ${{ matrix.target }} ${{ inputs.packages }} --features ${{ inputs.features_musl }}
+      - name: Rename binaries
+        shell: bash
+        run: |
+          mkdir -p upload
+          for bin in $(echo '${{ inputs.binaries }}' | jq -r '.[]'); do
+            src="target/${{ matrix.target }}/release/${bin}"
+            if [[ "${{ matrix.target }}" == *windows* ]]; then
+              src="${src}.exe"
+              dest="upload/${bin}-${{ matrix.target }}.exe"
+            else
+              dest="upload/${bin}-${{ matrix.target }}"
+            fi
+            cp "$src" "$dest"
+          done
+      - name: Upload binaries
+        uses: actions/upload-artifact@v6
+        with:
+          name: binaries-${{ matrix.target }}
+          path: upload/
+          if-no-files-found: error
+      - name: sccache stats
+        if: always() && (runner.os != 'macOS' || runner.arch == 'ARM64')
+        run: sccache --show-stats || true
