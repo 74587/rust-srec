@@ -3,21 +3,21 @@ import {
   Outlet,
   Scripts,
   createRootRouteWithContext,
-} from '@tanstack/react-router';
-import { useLingui } from '@lingui/react';
-import { type I18n } from '@lingui/core';
-import { useEffect, useState } from 'react';
+} from "@tanstack/react-router";
+import { useLingui } from "@lingui/react";
+import { type I18n } from "@lingui/core";
+import { useEffect, useState } from "react";
 
-import appCss from '../styles.css?url';
-import '@fontsource/inter/400.css';
-import '@fontsource/inter/500.css';
-import '@fontsource/inter/600.css';
-import '@fontsource/inter/700.css';
-import { NotFound } from '@/components/not-found';
-import { QueryClient } from '@tanstack/react-query';
-import { ThemeProvider } from '@/components/providers/theme-provider';
-import { Toaster } from '@/components/ui/sonner';
-import { isDesktopBuild } from '@/utils/desktop';
+import appCss from "../styles.css?url";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import { NotFound } from "@/components/not-found";
+import { QueryClient } from "@tanstack/react-query";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { isDesktopBuild } from "@/utils/desktop";
 
 type DevtoolsModules = {
   TanStackDevtools: React.ComponentType<any>;
@@ -41,9 +41,9 @@ const Devtools = (() => {
       void (async () => {
         const [reactDevtools, routerDevtools, queryDevtools] =
           await Promise.all([
-            import('@tanstack/react-devtools'),
-            import('@tanstack/react-router-devtools'),
-            import('@tanstack/react-query-devtools'),
+            import("@tanstack/react-devtools"),
+            import("@tanstack/react-router-devtools"),
+            import("@tanstack/react-query-devtools"),
           ]);
 
         if (cancelled) return;
@@ -71,14 +71,14 @@ const Devtools = (() => {
 
     return (
       <TanStackDevtools
-        config={{ position: 'bottom-right' }}
+        config={{ position: "bottom-right" }}
         plugins={[
           {
-            name: 'Tanstack Router',
+            name: "Tanstack Router",
             render: <TanStackRouterDevtoolsPanel />,
           },
           {
-            name: 'Tanstack Query',
+            name: "Tanstack Query",
             render: <ReactQueryDevtoolsPanel />,
           },
         ]}
@@ -100,11 +100,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   ),
   head: () => ({
     meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Rust-Srec' },
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "Rust-Srec" },
     ],
-    links: [{ rel: 'stylesheet', href: appCss }],
+    links: [{ rel: "stylesheet", href: appCss }],
   }),
   component: RootComponent,
   notFoundComponent: () => <NotFound />,
@@ -127,12 +127,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     void (async () => {
-      const { initDesktopLaunchListener } = await import('@/desktop/launch');
+      const { initDesktopLaunchListener } = await import("@/desktop/launch");
       if (cancelled) return;
 
       unlisten = await initDesktopLaunchListener((payload) => {
         window.dispatchEvent(
-          new CustomEvent('rust-srec:launch', {
+          new CustomEvent("rust-srec:launch", {
             detail: payload,
           }),
         );

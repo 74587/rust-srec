@@ -36,17 +36,12 @@ export function ThemeProvider({
   storageKey = 'theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-
-  // Sync theme from localStorage after hydration to avoid SSR mismatch.
-  // The ScriptOnce inline script already applies the correct CSS class
-  // to <html> before paint, so there is no FOUC.
-  useEffect(() => {
-    const stored = localStorage.getItem(storageKey) as Theme;
-    if (stored) {
-      setTheme(stored);
-    }
-  }, [storageKey]);
+  const [theme, setTheme] = useState<Theme>(
+    () =>
+      (typeof window !== 'undefined'
+        ? (localStorage.getItem(storageKey) as Theme)
+        : null) || defaultTheme,
+  );
 
   const handleMediaQuery = useCallback(
     (e: MediaQueryListEvent | MediaQueryList) => {
