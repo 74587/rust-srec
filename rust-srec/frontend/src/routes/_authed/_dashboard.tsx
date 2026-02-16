@@ -4,6 +4,7 @@ import * as React from 'react';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { SiteHeader } from '@/components/layout/site-header';
 import { Footer } from '@/components/sidebar/footer';
+import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { SidebarConfigProvider } from '@/contexts/sidebar-context';
 import { useSidebarConfig } from '@/hooks/use-sidebar-config';
@@ -110,7 +111,9 @@ function DashboardLayout() {
       <SiteHeader />
       <div className="flex flex-1 flex-col">
         <div className="w-full pt-8 pb-8 px-3 sm:px-8">
-          <Outlet />
+          <React.Suspense fallback={<DashboardSkeleton />}>
+            <Outlet />
+          </React.Suspense>
         </div>
         <Footer />
       </div>
@@ -141,5 +144,22 @@ function DashboardLayout() {
         </>
       )}
     </SidebarProvider>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+      <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 rounded-2xl" />
+        ))}
+      </div>
+      <Skeleton className="h-64 rounded-2xl" />
+    </div>
   );
 }

@@ -12,7 +12,7 @@ import { useTheme } from '@/components/providers/theme-provider';
 import { useCircularTransition } from '@/hooks/use-circular-transition';
 
 export function ModeToggle() {
-  const { setTheme, theme } = useTheme();
+  const { setMode, mode } = useTheme();
   const { startTransition } = useCircularTransition();
 
   return (
@@ -24,9 +24,9 @@ export function ModeToggle() {
             variant="outline"
             size="icon"
             onClick={(event) => {
-              const newTheme = theme === 'dark' ? 'light' : 'dark';
+              const newMode = mode === 'dark' ? 'light' : 'dark';
               startTransition({ x: event.clientX, y: event.clientY }, () => {
-                setTheme(newTheme);
+                setMode(newMode);
               });
             }}
           >

@@ -5,17 +5,12 @@ import { colorThemes } from '../config/theme-data';
 import type { ImportedTheme } from '../types/theme-customizer';
 
 export function useThemeManager() {
-  const { theme, setTheme } = useTheme();
+  const { mode, resolvedMode, setMode } = useTheme();
   const [brandColorsValues, setBrandColorsValues] = React.useState<
     Record<string, string>
   >({});
 
-  // Simple, reliable theme detection - just follow the theme provider
-  const isDarkMode = React.useMemo(() => {
-    if (theme === 'dark') return true;
-    if (theme === 'light') return false;
-    return window?.matchMedia('(prefers-color-scheme: dark)').matches;
-  }, [theme]);
+  const isDarkMode = resolvedMode === 'dark';
 
   const resetTheme = React.useCallback(() => {
     // Comprehensive reset of ALL possible CSS variables that could be set by themes
@@ -178,8 +173,8 @@ export function useThemeManager() {
   };
 
   return {
-    theme,
-    setTheme,
+    mode,
+    setMode,
     isDarkMode,
     brandColorsValues,
     setBrandColorsValues,

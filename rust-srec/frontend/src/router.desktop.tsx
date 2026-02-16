@@ -10,6 +10,7 @@ import { NotFound } from './components/not-found';
 import * as TanstackQuery from './integrations/tanstack-query/root-provider';
 import { createI18nInstance } from './integrations/lingui/i18n';
 import { routerWithLingui } from './integrations/lingui/router-plugin';
+import type { Mode } from '@/lib/theme-config';
 
 export function getRouter(i18n?: I18n) {
   const rqContext = TanstackQuery.getContext();
@@ -23,6 +24,7 @@ export function getRouter(i18n?: I18n) {
       context: {
         ...rqContext,
         i18n: resolvedI18n,
+        theme: { mode: 'system' as Mode },
       },
       defaultPreload: 'intent',
       defaultErrorComponent: DefaultCatchBoundary,

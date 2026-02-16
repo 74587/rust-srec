@@ -243,7 +243,7 @@ msgstr "生效日期"
 msgid "Active Download"
 msgstr "正在录制"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:328
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:414
 msgid "Active Recordings"
 msgstr "正在录制"
 
@@ -534,7 +534,7 @@ msgstr "确定要删除该处理任务吗？"
 msgid "Are you sure you want to delete this session? This action cannot be undone."
 msgstr "确定要删除此会话吗？此操作无法撤销。"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:118
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:174
 #: src/routes/_authed/_dashboard/streamers/index.lazy.tsx:209
 msgid "Are you sure you want to delete this streamer?"
 msgstr "确定要删除此主播吗？"
@@ -999,7 +999,7 @@ msgstr "检查登录"
 msgid "Check size after copy"
 msgstr "复制后检查大小"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:99
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:155
 #: src/routes/_authed/_dashboard/streamers/index.lazy.tsx:192
 msgid "Check triggered"
 msgstr "已触发检查"
@@ -1107,7 +1107,7 @@ msgid "Complete workflow: Remux, generate thumbnail, add metadata, and upload."
 msgstr "完整流程：重封装、生成缩略图、添加元数据并上传。"
 
 #: src/components/pipeline/dag-graph-view.tsx:394
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:296
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:382
 #: src/routes/_authed/_dashboard/pipeline/executions.$pipelineId.lazy.tsx:222
 #: src/routes/_authed/_dashboard/pipeline/executions.$pipelineId.lazy.tsx:296
 #: src/routes/_authed/_dashboard/pipeline/executions.$pipelineId.lazy.tsx:461
@@ -1658,7 +1658,7 @@ msgstr "深色"
 msgid "Dashboard"
 msgstr "仪表盘"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:242
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:298
 #: src/routes/_authed/_dashboard/system/health.lazy.tsx:326
 msgid "Database"
 msgstr "数据库"
@@ -1719,7 +1719,7 @@ msgid "Define sequences of processing steps for your recordings"
 msgstr "为录制内容定义处理步骤序列"
 
 #: src/components/health/health-status-badge.tsx:48
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:600
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:655
 msgid "Degraded"
 msgstr "降级"
 
@@ -1906,7 +1906,7 @@ msgstr "已禁用"
 msgid "Disconnected"
 msgstr "已断开"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:254
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:314
 msgid "Disk"
 msgstr "磁盘"
 
@@ -1968,7 +1968,7 @@ msgstr "录制引擎"
 msgid "Download engine (mesio)"
 msgstr "下载引擎（mesio）"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:248
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:306
 #: src/routes/_authed/_dashboard/system/health.lazy.tsx:327
 msgid "Download Manager"
 msgstr "下载管理"
@@ -2502,7 +2502,7 @@ msgid "ey..."
 msgstr "ey..."
 
 #: src/components/pipeline/dag-graph-view.tsx:396
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:306
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:393
 #: src/routes/_authed/_dashboard/pipeline/executions.$pipelineId.lazy.tsx:224
 #: src/routes/_authed/_dashboard/pipeline/executions.$pipelineId.lazy.tsx:463
 #: src/routes/_authed/_dashboard/pipeline/jobs/$jobId.lazy.tsx:334
@@ -2612,7 +2612,7 @@ msgstr "删除会话失败"
 msgid "Failed to delete sessions"
 msgstr "删除会话失败"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:93
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:149
 #: src/routes/_authed/_dashboard/streamers/index.lazy.tsx:187
 msgid "Failed to delete streamer"
 msgstr "删除主播失败"
@@ -2733,7 +2733,7 @@ msgstr "发送测试通知失败"
 msgid "Failed to start login: {0}"
 msgstr "启动登录失败：{0}"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:101
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:157
 #: src/routes/_authed/_dashboard/streamers/index.lazy.tsx:194
 msgid "Failed to trigger check"
 msgstr "触发检查失败"
@@ -2769,7 +2769,7 @@ msgid "Failed to update settings"
 msgstr "更新设置失败"
 
 #: src/hooks/use-edit-streamer.ts:82
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:112
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:168
 #: src/routes/_authed/_dashboard/streamers/index.lazy.tsx:205
 msgid "Failed to update streamer"
 msgstr "更新主播失败"
@@ -3185,7 +3185,7 @@ msgid "Health"
 msgstr "健康"
 
 #: src/components/health/health-status-badge.tsx:35
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:598
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:653
 msgid "Healthy"
 msgstr "正常"
 
@@ -4223,7 +4223,7 @@ msgstr "新模板名称"
 msgid "Next"
 msgstr "下一步"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:380
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:477
 msgid "No active recordings"
 msgstr "暂无正在录制"
 
@@ -4487,7 +4487,7 @@ msgstr "正常"
 msgid "Normal+"
 msgstr "普通+"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:426
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:517
 msgid "Not available"
 msgstr "不可用"
 
@@ -4750,7 +4750,7 @@ msgstr "输出"
 msgid "Outside Schedule"
 msgstr "不在计划时间内"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:198
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:255
 msgid "Overall Health"
 msgstr "总体健康"
 
@@ -4923,7 +4923,7 @@ msgstr "条已暂停"
 msgid "Pending"
 msgstr "待处理"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:276
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:360
 msgid "Pending Jobs"
 msgstr "待处理任务"
 
@@ -5037,7 +5037,7 @@ msgstr "处理管道名称"
 msgid "Pipeline name is required"
 msgstr "处理管道名称是必填项"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:271
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:332
 msgid "Pipeline Statistics"
 msgstr "处理管道统计"
 
@@ -5340,7 +5340,7 @@ msgid "Process video and extract podcast audio in parallel, then upload both."
 msgstr "并行处理视频并提取播客音频，然后同时上传两者。"
 
 #: src/components/pipeline/dag-graph-view.tsx:392
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:286
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:371
 #: src/routes/_authed/_dashboard/pipeline/executions.$pipelineId.lazy.tsx:220
 #: src/routes/_authed/_dashboard/pipeline/executions.$pipelineId.lazy.tsx:459
 #: src/routes/_authed/_dashboard/pipeline/jobs/$jobId.lazy.tsx:330
@@ -6531,7 +6531,7 @@ msgstr "主播检查"
 msgid "Streamer created successfully"
 msgstr "主播创建成功"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:89
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:145
 #: src/routes/_authed/_dashboard/streamers/index.lazy.tsx:183
 msgid "Streamer deleted"
 msgstr "主播已删除"
@@ -6557,7 +6557,7 @@ msgstr "主播处于冷却期"
 msgid "Streamer pagination"
 msgstr "主播分页"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:108
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:164
 #: src/routes/_authed/_dashboard/streamers/index.lazy.tsx:201
 msgid "Streamer updated"
 msgstr "主播已更新"
@@ -6576,7 +6576,7 @@ msgstr "主播更新成功"
 msgid "Streamers"
 msgstr "主播"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:383
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:480
 msgid "Streamers currently live will appear here."
 msgstr "当前正在直播的主播会显示在这里。"
 
@@ -6665,7 +6665,7 @@ msgid "System Health"
 msgstr "系统健康"
 
 #: src/components/config/engines/engine-card.tsx:170
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:167
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:215
 msgid "System Status"
 msgstr "系统状态"
 
@@ -7209,7 +7209,7 @@ msgid "Ultrafast H.264 encoding (CRF 26) for quick sharing."
 msgstr "超快 H.264 编码（CRF 26），用于快速分享。"
 
 #: src/components/health/health-status-badge.tsx:61
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:602
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:657
 msgid "Unhealthy"
 msgstr "不健康"
 
@@ -7217,7 +7217,7 @@ msgstr "不健康"
 msgid "Unix timestamp"
 msgstr "Unix 时间戳"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:604
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:659
 msgid "Unknown"
 msgstr "未知"
 
@@ -7256,7 +7256,7 @@ msgid "Update Channel"
 msgstr "更新渠道"
 
 #: src/components/config/global/backup-restore-card.tsx:179
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:497
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:575
 msgid "Updated"
 msgstr "已更新"
 
@@ -7452,7 +7452,7 @@ msgstr "视频设置"
 msgid "View"
 msgstr "查看"
 
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:338
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:424
 msgid "View All"
 msgstr "查看全部"
 
@@ -7470,7 +7470,7 @@ msgstr "查看详细日志与输出"
 
 #: src/components/pipeline/jobs/pipeline-summary-card.tsx:164
 #: src/components/sessions/session-card.tsx:271
-#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:176
+#: src/routes/_authed/_dashboard/dashboard.lazy.tsx:224
 msgid "View Details"
 msgstr "查看详情"
 

@@ -12,7 +12,7 @@ interface CircularTransitionHook {
 }
 
 export function useCircularTransition(): CircularTransitionHook {
-  const { theme, setTheme } = useTheme();
+  const { mode, setMode } = useTheme();
   const isTransitioningRef = useRef(false);
 
   const startTransition = useCallback(
@@ -105,10 +105,10 @@ export function useCircularTransition(): CircularTransitionHook {
       };
 
       startTransition(coords, () => {
-        setTheme(theme === 'dark' ? 'light' : 'dark');
+        setMode(mode === 'dark' ? 'light' : 'dark');
       });
     },
-    [theme, setTheme, startTransition],
+    [mode, setMode, startTransition],
   );
 
   const isTransitioning = useCallback(() => {

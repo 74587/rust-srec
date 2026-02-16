@@ -22,7 +22,7 @@ interface ThemeTabProps {
 }
 
 export function ThemeTab({ onOpenImport }: ThemeTabProps) {
-  const { theme, setTheme } = useTheme();
+  const { mode, setMode } = useTheme();
   const themeSettings = useThemeSettings(
     useShallow((state) => ({
       base: state.base,
@@ -143,12 +143,12 @@ export function ThemeTab({ onOpenImport }: ThemeTabProps) {
         <Label className="text-sm font-medium">Mode</Label>
         <div className="grid grid-cols-3 gap-2">
           <Button
-            variant={theme === 'light' ? 'secondary' : 'outline'}
+            variant={mode === 'light' ? 'secondary' : 'outline'}
             size="sm"
             onClick={(event) => {
-              if (theme === 'light') return;
+              if (mode === 'light') return;
               startTransition({ x: event.clientX, y: event.clientY }, () => {
-                setTheme('light');
+                setMode('light');
               });
             }}
             className="cursor-pointer"
@@ -157,12 +157,12 @@ export function ThemeTab({ onOpenImport }: ThemeTabProps) {
             Light
           </Button>
           <Button
-            variant={theme === 'dark' ? 'secondary' : 'outline'}
+            variant={mode === 'dark' ? 'secondary' : 'outline'}
             size="sm"
             onClick={(event) => {
-              if (theme === 'dark') return;
+              if (mode === 'dark') return;
               startTransition({ x: event.clientX, y: event.clientY }, () => {
-                setTheme('dark');
+                setMode('dark');
               });
             }}
             className="cursor-pointer"
@@ -171,12 +171,12 @@ export function ThemeTab({ onOpenImport }: ThemeTabProps) {
             Dark
           </Button>
           <Button
-            variant={theme === 'system' ? 'secondary' : 'outline'}
+            variant={mode === 'system' ? 'secondary' : 'outline'}
             size="sm"
             onClick={(event) => {
-              if (theme === 'system') return;
+              if (mode === 'system') return;
               startTransition({ x: event.clientX, y: event.clientY }, () => {
-                setTheme('system');
+                setMode('system');
               });
             }}
             className="cursor-pointer"

@@ -25,29 +25,86 @@ import { type I18n } from '@lingui/core';
 import { createLazyFileRoute, Link } from '@tanstack/react-router';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { formatRelativeTime } from '@/lib/date-utils';
 import { formatDuration } from '@/lib/format';
 import { useCallback, useMemo, memo, useState, useEffect } from 'react';
 
-const CONTAINER_VARIANTS = {
+const SKELETON_COUNT = 4;
+const GRID_4 = 'grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4';
+const GRID_STREAMERS =
+  'grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+
+// --- Animation variants ---
+
+/** Container: orchestrates staggered entry of children */
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: {
+  visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.04,
+      delayChildren: 0.02,
     },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.1 },
   },
 };
 
-const ITEM_VARIANTS = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
+/** Each grid item fades + slides up */
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.15, ease: 'easeOut' },
+  },
 };
 
-const SKELETON_ARRAY = Array.from({ length: 4 });
+// --- Skeleton components ---
+
+function CardSkeleton() {
+  return (
+    <DashboardCard className="h-full">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+        <Skeleton className="h-3.5 w-24 rounded" />
+        <Skeleton className="h-8 w-8 rounded-xl" />
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Skeleton className="h-7 w-16 rounded" />
+        <Skeleton className="h-2.5 w-28 rounded" />
+      </CardContent>
+    </DashboardCard>
+  );
+}
+
+function StreamerCardSkeleton() {
+  return (
+    <DashboardCard>
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-28 rounded" />
+            <Skeleton className="h-3 w-20 rounded" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Skeleton className="h-3 w-full rounded" />
+        <Skeleton className="h-3 w-2/3 rounded" />
+        <div className="flex gap-2 pt-2">
+          <Skeleton className="h-8 w-20 rounded-md" />
+          <Skeleton className="h-8 w-20 rounded-md" />
+        </div>
+      </CardContent>
+    </DashboardCard>
+  );
+}
 
 export const Route = createLazyFileRoute('/_authed/_dashboard/dashboard')({
   component: Dashboard,
@@ -148,18 +205,10 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen p-3 md:p-8 space-y-6 md:space-y-8 bg-gradient-to-br from-background via-background to-muted/20">
-      <motion.div
-        variants={CONTAINER_VARIANTS}
-        initial="hidden"
-        animate="show"
-        className="space-y-10 relative z-10"
-      >
+      <div className="space-y-10 relative z-10">
         {/* System Health Section */}
         <section className="space-y-6">
-          <motion.div
-            variants={ITEM_VARIANTS}
-            className="flex items-center justify-between"
-          >
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary">
                 <Activity className="h-5 w-5" />
@@ -176,22 +225,31 @@ function Dashboard() {
                 <Trans>View Details</Trans>
               </Link>
             </Button>
-          </motion.div>
+          </div>
 
-          <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <AnimatePresence mode="wait">
             {isHealthLoading || !health ? (
-              SKELETON_ARRAY.map((_, i) => (
-                <Skeleton key={i} className="h-32 rounded-2xl bg-muted/20" />
-              ))
+              <motion.div
+                key="health-skeleton"
+                className={GRID_4}
+                initial={false}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.1 } }}
+              >
+                {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+                  <CardSkeleton key={i} />
+                ))}
+              </motion.div>
             ) : (
               <motion.div
-                variants={CONTAINER_VARIANTS}
+                key="health-content"
+                className={GRID_4}
+                variants={containerVariants}
                 initial="hidden"
-                animate="show"
-                className="contents"
+                animate="visible"
+                exit="exit"
               >
-                {/* Summary Card */}
-                <motion.div variants={ITEM_VARIANTS} className="h-full">
+                <motion.div variants={itemVariants}>
                   <DashboardCard className="h-full">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
@@ -236,91 +294,120 @@ function Dashboard() {
                     </CardContent>
                   </DashboardCard>
                 </motion.div>
-
-                {/* Key Components */}
-                <ComponentStatusCard
-                  name={i18n._(msg`Database`)}
-                  component={dbComponent}
-                  icon={HardDrive}
-                  mounted={mounted}
-                />
-                <ComponentStatusCard
-                  name={i18n._(msg`Download Manager`)}
-                  component={downloadMgrComponent}
-                  icon={Activity}
-                  mounted={mounted}
-                />
-                <ComponentStatusCard
-                  name={i18n._(msg`Disk`)}
-                  component={diskComponent}
-                  icon={HardDrive}
-                  mounted={mounted}
-                />
+                <motion.div variants={itemVariants}>
+                  <ComponentStatusCard
+                    name={i18n._(msg`Database`)}
+                    component={dbComponent}
+                    icon={HardDrive}
+                    mounted={mounted}
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <ComponentStatusCard
+                    name={i18n._(msg`Download Manager`)}
+                    component={downloadMgrComponent}
+                    icon={Activity}
+                    mounted={mounted}
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <ComponentStatusCard
+                    name={i18n._(msg`Disk`)}
+                    component={diskComponent}
+                    icon={HardDrive}
+                    mounted={mounted}
+                  />
+                </motion.div>
               </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </section>
 
         {/* Pipeline Stats Section */}
         <section className="space-y-6">
-          <motion.div variants={ITEM_VARIANTS}>
+          <div>
             <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary">
                 <Activity className="h-5 w-5" />
               </div>
               <Trans>Pipeline Statistics</Trans>
             </h2>
-          </motion.div>
-          <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title={<Trans>Pending Jobs</Trans>}
-              icon={Circle}
-              value={stats?.pending_count}
-              loading={isStatsLoading}
-              color="text-yellow-500"
-              bg="bg-yellow-500/10"
-              href="/pipeline/jobs"
-              search={{ status: 'PENDING' }}
-            />
-            <StatCard
-              title={<Trans>Processing</Trans>}
-              icon={Activity}
-              value={stats?.processing_count}
-              loading={isStatsLoading}
-              color="text-blue-500"
-              bg="bg-blue-500/10"
-              href="/pipeline/jobs"
-              search={{ status: 'PROCESSING' }}
-            />
-            <StatCard
-              title={<Trans>Completed</Trans>}
-              icon={CheckCircle}
-              value={stats?.completed_count}
-              loading={isStatsLoading}
-              color="text-green-500"
-              bg="bg-green-500/10"
-              href="/pipeline/jobs"
-              search={{ status: 'COMPLETED' }}
-            />
-            <StatCard
-              title={<Trans>Failed</Trans>}
-              icon={XCircle}
-              value={stats?.failed_count}
-              loading={isStatsLoading}
-              color="text-red-500"
-              bg="bg-red-500/10"
-              href="/pipeline/jobs"
-              search={{ status: 'FAILED' }}
-            />
           </div>
+
+          <AnimatePresence mode="wait">
+            {isStatsLoading ? (
+              <motion.div
+                key="stats-skeleton"
+                className={GRID_4}
+                initial={false}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.1 } }}
+              >
+                {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+                  <CardSkeleton key={i} />
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="stats-content"
+                className={GRID_4}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <motion.div variants={itemVariants}>
+                  <StatCard
+                    title={<Trans>Pending Jobs</Trans>}
+                    icon={Circle}
+                    value={stats?.pending_count}
+                    color="text-yellow-500"
+                    bg="bg-yellow-500/10"
+                    href="/pipeline/jobs"
+                    search={{ status: 'PENDING' }}
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <StatCard
+                    title={<Trans>Processing</Trans>}
+                    icon={Activity}
+                    value={stats?.processing_count}
+                    color="text-blue-500"
+                    bg="bg-blue-500/10"
+                    href="/pipeline/jobs"
+                    search={{ status: 'PROCESSING' }}
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <StatCard
+                    title={<Trans>Completed</Trans>}
+                    icon={CheckCircle}
+                    value={stats?.completed_count}
+                    color="text-green-500"
+                    bg="bg-green-500/10"
+                    href="/pipeline/jobs"
+                    search={{ status: 'COMPLETED' }}
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <StatCard
+                    title={<Trans>Failed</Trans>}
+                    icon={XCircle}
+                    value={stats?.failed_count}
+                    color="text-red-500"
+                    bg="bg-red-500/10"
+                    href="/pipeline/jobs"
+                    search={{ status: 'FAILED' }}
+                  />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </section>
 
         {/* Active Recordings Section */}
         <section className="space-y-6">
-          <motion.div
-            variants={ITEM_VARIANTS}
-            className="flex items-center justify-between"
-          >
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
               <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
                 <PlayCircle className="h-5 w-5" />
@@ -339,55 +426,67 @@ function Dashboard() {
                 </Link>
               </Button>
             )}
-          </motion.div>
+          </div>
 
-          <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <AnimatePresence mode="wait">
             {isStreamersLoading ? (
-              SKELETON_ARRAY.map((_, i) => (
-                <Skeleton
-                  key={i}
-                  className="h-[200px] w-full rounded-2xl bg-muted/20"
-                />
-              ))
+              <motion.div
+                key="streamers-skeleton"
+                className={GRID_STREAMERS}
+                initial={false}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.1 } }}
+              >
+                {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+                  <StreamerCardSkeleton key={i} />
+                ))}
+              </motion.div>
             ) : activeStreamers.length > 0 ? (
-              activeStreamers.map((streamer, index) => (
-                <motion.div
-                  key={streamer.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + index * 0.05 }}
-                >
-                  <StreamerCard
-                    streamer={streamer}
-                    onDelete={handleDelete}
-                    onToggle={handleToggle}
-                    onCheck={handleCheck}
-                  />
-                </motion.div>
-              ))
+              <motion.div
+                key="streamers-content"
+                className={GRID_STREAMERS}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                {activeStreamers.map((streamer) => (
+                  <motion.div key={streamer.id} variants={itemVariants}>
+                    <StreamerCard
+                      streamer={streamer}
+                      onDelete={handleDelete}
+                      onToggle={handleToggle}
+                      onCheck={handleCheck}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
             ) : (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="col-span-full flex flex-col items-center justify-center p-12 text-center space-y-4 border border-dashed border-white/10 rounded-3xl bg-card/30 backdrop-blur-sm"
+                key="streamers-empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.12 }}
               >
-                <div className="p-4 rounded-full bg-muted/20">
-                  <Activity className="h-8 w-8 text-muted-foreground/50" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-medium text-muted-foreground">
-                    <Trans>No active recordings</Trans>
-                  </h3>
-                  <p className="text-sm text-muted-foreground/60">
-                    <Trans>Streamers currently live will appear here.</Trans>
-                  </p>
+                <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 border border-dashed border-white/10 rounded-3xl bg-card/30 backdrop-blur-sm">
+                  <div className="p-4 rounded-full bg-muted/20">
+                    <Activity className="h-8 w-8 text-muted-foreground/50" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-medium text-muted-foreground">
+                      <Trans>No active recordings</Trans>
+                    </h3>
+                    <p className="text-sm text-muted-foreground/60">
+                      <Trans>Streamers currently live will appear here.</Trans>
+                    </p>
+                  </div>
                 </div>
               </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </section>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -408,101 +507,80 @@ const ComponentStatusCard = memo(
 
     if (!component)
       return (
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            show: { opacity: 1, y: 0 },
-          }}
-          className="h-full"
-        >
-          <DashboardCard className="h-full opacity-60">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                {name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground font-mono">
-                <Trans>Not available</Trans>
-              </div>
-            </CardContent>
-          </DashboardCard>
-        </motion.div>
+        <DashboardCard className="h-full opacity-60">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              {name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-muted-foreground font-mono">
+              <Trans>Not available</Trans>
+            </div>
+          </CardContent>
+        </DashboardCard>
       );
 
     const isHealthy = component.status === 'healthy';
 
     return (
-      <motion.div
-        variants={{
-          hidden: { opacity: 0, y: 20 },
-          show: { opacity: 1, y: 0 },
-        }}
-        className="h-full"
+      <DashboardCard
+        className={cn('h-full', !isHealthy && 'border-red-500/30 bg-red-500/5')}
       >
-        <DashboardCard
-          className={cn(
-            'h-full',
-            !isHealthy && 'border-red-500/30 bg-red-500/5',
-          )}
-        >
-          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              {name}
-            </CardTitle>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            {name}
+          </CardTitle>
+          <div
+            className={cn(
+              'p-1.5 rounded-md transition-colors',
+              isHealthy
+                ? 'bg-secondary/50 text-secondary-foreground'
+                : 'bg-red-500/10 text-red-500',
+            )}
+          >
+            <Icon className="h-4 w-4" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-3 w-3">
+              {!isHealthy && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              )}
+              <span
+                className={cn(
+                  'relative inline-flex rounded-full h-3 w-3',
+                  isHealthy
+                    ? 'bg-green-500'
+                    : component.status === 'degraded'
+                      ? 'bg-yellow-500'
+                      : 'bg-red-500',
+                )}
+              ></span>
+            </div>
+
             <div
               className={cn(
-                'p-1.5 rounded-md transition-colors',
-                isHealthy
-                  ? 'bg-secondary/50 text-secondary-foreground'
-                  : 'bg-red-500/10 text-red-500',
+                'text-lg font-bold capitalize truncate tracking-tight',
+                !isHealthy && 'text-red-500 dark:text-red-400',
               )}
             >
-              <Icon className="h-4 w-4" />
+              {!isHealthy && component.message && component.message.length < 30
+                ? component.message
+                : getStatusLabel(component.status, i18n)}
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-3 w-3">
-                {!isHealthy && (
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                )}
-                <span
-                  className={cn(
-                    'relative inline-flex rounded-full h-3 w-3',
-                    isHealthy
-                      ? 'bg-green-500'
-                      : component.status === 'degraded'
-                        ? 'bg-yellow-500'
-                        : 'bg-red-500',
-                  )}
-                ></span>
-              </div>
-
-              <div
-                className={cn(
-                  'text-lg font-bold capitalize truncate tracking-tight',
-                  !isHealthy && 'text-red-500 dark:text-red-400',
-                )}
-              >
-                {!isHealthy &&
-                component.message &&
-                component.message.length < 30
-                  ? component.message
-                  : getStatusLabel(component.status, i18n)}
-              </div>
-            </div>
-            {component.last_check && (
-              <p className="text-[10px] text-muted-foreground/60 mt-3 font-mono">
-                <Trans>Updated</Trans>{' '}
-                {mounted
-                  ? formatRelativeTime(component.last_check, i18n.locale)
-                  : '-'}
-              </p>
-            )}
-          </CardContent>
-        </DashboardCard>
-      </motion.div>
+          </div>
+          {component.last_check && (
+            <p className="text-[10px] text-muted-foreground/60 mt-3 font-mono">
+              <Trans>Updated</Trans>{' '}
+              {mounted
+                ? formatRelativeTime(component.last_check, i18n.locale)
+                : '-'}
+            </p>
+          )}
+        </CardContent>
+      </DashboardCard>
     );
   },
 );
@@ -514,7 +592,6 @@ const StatCard = memo(
     title,
     icon: Icon,
     value,
-    loading,
     color,
     bg,
     href,
@@ -523,7 +600,6 @@ const StatCard = memo(
     title: React.ReactNode;
     icon: any;
     value?: number;
-    loading: boolean;
     color?: string;
     bg?: string;
     href?: string;
@@ -551,42 +627,22 @@ const StatCard = memo(
           </div>
         </CardHeader>
         <CardContent className="relative z-10">
-          {loading ? (
-            <Skeleton className="h-9 w-16 rounded-lg bg-muted/20" />
-          ) : (
-            <div className="text-2xl font-bold tracking-tighter text-foreground">
-              {value}
-            </div>
-          )}
+          <div className="text-2xl font-bold tracking-tighter text-foreground">
+            {value}
+          </div>
         </CardContent>
       </DashboardCard>
     );
 
     if (href) {
       return (
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            show: { opacity: 1, y: 0 },
-          }}
-        >
-          <Link to={href} search={search}>
-            {content}
-          </Link>
-        </motion.div>
+        <Link to={href} search={search}>
+          {content}
+        </Link>
       );
     }
 
-    return (
-      <motion.div
-        variants={{
-          hidden: { opacity: 0, y: 20 },
-          show: { opacity: 1, y: 0 },
-        }}
-      >
-        {content}
-      </motion.div>
-    );
+    return content;
   },
 );
 
