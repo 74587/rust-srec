@@ -288,6 +288,7 @@ fn map_event_to_protobuf(
             engine_type,
             cdn_host,
             download_url,
+            ..
         } => {
             let now_ms = chrono::Utc::now().timestamp_millis();
             let meta = crate::api::proto::DownloadMeta {
@@ -335,6 +336,7 @@ fn map_event_to_protobuf(
             segment_index,
             duration_secs,
             size_bytes,
+            ..
         } => {
             let payload = SegmentCompleted {
                 download_id: download_id.clone(),
@@ -358,6 +360,7 @@ fn map_event_to_protobuf(
             total_duration_secs,
             total_segments,
             file_path: _file_path,
+            ..
         } => {
             let payload = DownloadCompleted {
                 download_id: download_id.clone(),
@@ -397,6 +400,7 @@ fn map_event_to_protobuf(
             streamer_id,
             session_id,
             cause,
+            ..
         } => {
             let payload = DownloadCancelled {
                 download_id: download_id.clone(),
@@ -414,6 +418,7 @@ fn map_event_to_protobuf(
             session_id,
             reason,
             retry_after_secs,
+            ..
         } => {
             let payload = DownloadRejected {
                 streamer_id: streamer_id.clone(),
@@ -449,6 +454,7 @@ mod tests {
         let event = DownloadManagerEvent::DownloadStarted {
             download_id: "dl-1".to_string(),
             streamer_id: "streamer-123".to_string(),
+            streamer_name: "streamer-123".to_string(),
             session_id: "session-1".to_string(),
             engine_type: EngineType::Ffmpeg,
             cdn_host: "cdn.example.com".to_string(),
@@ -473,6 +479,7 @@ mod tests {
         let event = DownloadManagerEvent::ConfigUpdated {
             download_id: "dl-1".to_string(),
             streamer_id: "streamer-123".to_string(),
+            streamer_name: "streamer-123".to_string(),
             update_type: ConfigUpdateType::Cookies,
         };
 
@@ -485,6 +492,7 @@ mod tests {
         let event = DownloadManagerEvent::DownloadStarted {
             download_id: "dl-1".to_string(),
             streamer_id: "streamer-123".to_string(),
+            streamer_name: "streamer-123".to_string(),
             session_id: "session-1".to_string(),
             engine_type: EngineType::Ffmpeg,
             cdn_host: "cdn.example.com".to_string(),
@@ -509,6 +517,7 @@ mod tests {
         let event = DownloadManagerEvent::SegmentCompleted {
             download_id: "dl-1".to_string(),
             streamer_id: "streamer-123".to_string(),
+            streamer_name: "streamer-123".to_string(),
             session_id: "session-1".to_string(),
             segment_path: "/path/to/segment.ts".to_string(),
             segment_index: 5,
@@ -535,6 +544,7 @@ mod tests {
         let event = DownloadManagerEvent::DownloadCompleted {
             download_id: "dl-1".to_string(),
             streamer_id: "streamer-123".to_string(),
+            streamer_name: "streamer-123".to_string(),
             session_id: "session-1".to_string(),
             total_bytes: 10240000,
             total_duration_secs: 3600.0,
@@ -561,6 +571,7 @@ mod tests {
         let event = DownloadManagerEvent::DownloadFailed {
             download_id: "dl-1".to_string(),
             streamer_id: "streamer-123".to_string(),
+            streamer_name: "streamer-123".to_string(),
             session_id: "session-1".to_string(),
             kind: DownloadFailureKind::Network,
             error: "Connection timeout".to_string(),
@@ -584,6 +595,7 @@ mod tests {
         let event = DownloadManagerEvent::DownloadCancelled {
             download_id: "dl-1".to_string(),
             streamer_id: "streamer-123".to_string(),
+            streamer_name: "streamer-123".to_string(),
             session_id: "session-1".to_string(),
             cause: crate::downloader::DownloadStopCause::User,
         };
@@ -604,6 +616,7 @@ mod tests {
     fn test_download_rejected_event_mapping() {
         let event = DownloadManagerEvent::DownloadRejected {
             streamer_id: "streamer-123".to_string(),
+            streamer_name: "streamer-123".to_string(),
             session_id: "session-1".to_string(),
             reason: "Circuit breaker open".to_string(),
             retry_after_secs: Some(60),
@@ -628,6 +641,7 @@ mod tests {
         let event = DownloadManagerEvent::DownloadStarted {
             download_id: "dl-1".to_string(),
             streamer_id: "streamer-123".to_string(),
+            streamer_name: "streamer-123".to_string(),
             session_id: "session-1".to_string(),
             engine_type: EngineType::Ffmpeg,
             cdn_host: "cdn.example.com".to_string(),

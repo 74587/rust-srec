@@ -539,6 +539,7 @@ mod tests {
             cookies: None,
             headers: Vec::new(),
             streamer_id: "test-streamer".to_string(),
+            streamer_name: "test-streamer".to_string(),
             session_id: "test-session".to_string(),
             enable_processing: false,
             pipeline_config: None,

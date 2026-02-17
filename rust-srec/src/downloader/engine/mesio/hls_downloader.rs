@@ -394,6 +394,7 @@ mod tests {
             "http://example.invalid/stream.m3u8",
             temp.path().to_path_buf(),
             "streamer",
+            "streamer",
             "session",
         )
         .with_filename_template("test-hls");

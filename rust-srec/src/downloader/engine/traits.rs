@@ -85,6 +85,8 @@ pub struct DownloadConfig {
     pub headers: Vec<(String, String)>,
     /// Streamer ID for tracking.
     pub streamer_id: String,
+    /// Streamer display name for notifications.
+    pub streamer_name: String,
     /// Session ID for tracking.
     pub session_id: String,
 
@@ -117,6 +119,7 @@ impl DownloadConfig {
         url: impl Into<String>,
         output_dir: impl Into<PathBuf>,
         streamer_id: impl Into<String>,
+        streamer_name: impl Into<String>,
         session_id: impl Into<String>,
     ) -> Self {
         Self {
@@ -131,6 +134,7 @@ impl DownloadConfig {
             cookies: None,
             headers: Vec::new(),
             streamer_id: streamer_id.into(),
+            streamer_name: streamer_name.into(),
             session_id: session_id.into(),
             enable_processing: true,
             pipeline_config: None,
@@ -590,6 +594,7 @@ mod tests {
         let config = DownloadConfig::new(
             "https://example.com/stream",
             "/tmp/downloads",
+            "streamer-123",
             "streamer-123",
             "session-456",
         )

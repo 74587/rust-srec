@@ -995,6 +995,7 @@ impl<R: StreamerRepository + Send + Sync + 'static> Scheduler<R> {
                 reason,
                 retry_after_secs,
                 session_id,
+                ..
             } => {
                 let retry_secs = retry_after_secs.unwrap_or(60);
                 send_to_actor(
