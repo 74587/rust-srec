@@ -13,6 +13,7 @@ import {
 } from '@/server/functions/notifications';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CardSkeleton } from '@/components/shared/card-skeleton';
 import { Plus, Bell, Settings2, ListOrdered, Monitor } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import { useLingui } from '@lingui/react';
@@ -28,6 +29,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Badge } from '@/components/ui/badge';
 import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
+import { containerVariants, itemVariants } from '@/lib/animation';
 import { useNotificationDot } from '@/hooks/use-notification-dot';
 import { isTauriRuntime } from '@/utils/tauri';
 import {
@@ -321,21 +323,6 @@ function NotificationsPage() {
     setIsFormOpen(true);
   };
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
-  };
-
   const webPushStatusText = useMemo(() => {
     if (!webPushSupported) return i18n._(msg`Not supported in this browser`);
     if (webPushKeyQuery.isError) return i18n._(msg`Server not configured`);
@@ -373,12 +360,12 @@ function NotificationsPage() {
   return (
     <motion.div
       className="min-h-screen space-y-6"
-      variants={container}
+      variants={containerVariants}
       initial="hidden"
-      animate="show"
+      animate="visible"
     >
       {/* Header */}
-      <motion.div className="border-b border-border/40" variants={item}>
+      <motion.div className="border-b border-border/40" variants={itemVariants}>
         <div className="w-full">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between p-4 md:px-8">
             <div className="flex items-center gap-4">
@@ -435,16 +422,13 @@ function NotificationsPage() {
           {isLoading ? (
             <motion.div
               key="loading"
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
               {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-[200px] border rounded-xl bg-muted/10 animate-pulse flex flex-col p-6 space-y-4 shadow-sm"
-                >
+                <CardSkeleton key={i}>
                   <div className="flex justify-between items-start">
                     <Skeleton className="h-10 w-10 rounded-full" />
                     <Skeleton className="h-6 w-8" />
@@ -453,19 +437,20 @@ function NotificationsPage() {
                     <Skeleton className="h-6 w-3/4" />
                     <Skeleton className="h-4 w-1/2" />
                   </div>
-                </div>
+                </CardSkeleton>
               ))}
             </motion.div>
           ) : (
             <motion.div
               key="list"
-              variants={container}
+              variants={containerVariants}
               initial="hidden"
-              animate="show"
+              animate="visible"
+              exit="exit"
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
               {/* Browser Card First */}
-              <motion.div variants={item}>
+              <motion.div variants={itemVariants}>
                 <div
                   onClick={() =>
                     isDesktop
@@ -582,7 +567,7 @@ function NotificationsPage() {
 
               {/* Other Channels */}
               {(channels || []).map((channel) => (
-                <motion.div key={channel.id} variants={item}>
+                <motion.div key={channel.id} variants={itemVariants}>
                   <ChannelCard
                     channel={channel}
                     onEdit={handleEdit}

@@ -28,6 +28,7 @@ import { EventCard } from '@/components/notifications/events/event-card';
 import { listEvents, listEventTypes } from '@/server/functions/notifications';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CardSkeleton } from '@/components/shared/card-skeleton';
 import {
   Select,
   SelectContent,
@@ -44,6 +45,8 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
+import { containerVariants, itemVariants } from '@/lib/animation';
 import {
   getLastSeenCriticalMs,
   onNotificationStateChanged,
@@ -387,37 +390,59 @@ function NotificationEventsPage() {
       />
 
       <div className="p-4 md:px-8 pb-20 space-y-4">
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-32 w-full rounded-2xl" />
-            ))}
-          </div>
-        ) : (events ?? []).length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-3xl bg-muted/5">
-            <div className="p-4 bg-muted/20 rounded-full">
-              <Bell className="h-10 w-10 text-muted-foreground/40" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-medium text-lg">
-                <Trans>No events found</Trans>
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                <Trans>Try adjusting your filters or limit</Trans>
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {events.map((e) => (
-              <EventCard
-                key={e.id}
-                event={e}
-                onViewDetails={handleViewDetails}
-              />
-            ))}
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div
+              key="loading"
+              initial={false}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <CardSkeleton key={i} className="min-h-[128px]">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-3 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                </CardSkeleton>
+              ))}
+            </motion.div>
+          ) : (events ?? []).length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-3xl bg-muted/5"
+            >
+              <div className="p-4 bg-muted/20 rounded-full">
+                <Bell className="h-10 w-10 text-muted-foreground/40" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-medium text-lg">
+                  <Trans>No events found</Trans>
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>Try adjusting your filters or limit</Trans>
+                </p>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="list"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              {events.map((e) => (
+                <motion.div key={e.id} variants={itemVariants}>
+                  <EventCard event={e} onViewDetails={handleViewDetails} />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {(hasPrev || hasMore) && (
           <div className="flex items-center justify-center gap-2 pt-6">

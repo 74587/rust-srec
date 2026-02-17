@@ -36,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DashboardHeader } from '@/components/shared/dashboard-header';
+import { containerVariants, itemVariants } from '@/lib/animation';
 import {
   Select,
   SelectContent,
@@ -211,17 +212,6 @@ function StreamersPage() {
     }
   };
 
-  // Animation variants matching dashboard
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
   if (isError) {
     return (
       <div className="p-8 text-center text-destructive">
@@ -233,12 +223,7 @@ function StreamersPage() {
   }
 
   return (
-    <motion.div
-      className="min-h-screen space-y-6"
-      variants={container}
-      initial="hidden"
-      animate="show"
-    >
+    <div className="min-h-screen space-y-6">
       {/* Header */}
       <DashboardHeader
         icon={Video}
@@ -316,15 +301,15 @@ function StreamersPage() {
           {isLoading ? (
             <motion.div
               key="loading"
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div
                   key={i}
-                  className="h-[200px] border rounded-xl bg-muted/10 animate-pulse flex flex-col p-6 space-y-4"
+                  className="border rounded-xl bg-muted/10 animate-pulse flex flex-col p-6 space-y-4 overflow-hidden"
                 >
                   <div className="flex items-center gap-3">
                     <Skeleton className="h-10 w-10 rounded-full" />
@@ -341,19 +326,13 @@ function StreamersPage() {
             <motion.div
               key="list"
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              {streamers.map((streamer, index) => (
-                <motion.div
-                  key={streamer.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    delay: index * 0.05,
-                  }}
-                >
+              {streamers.map((streamer) => (
+                <motion.div key={streamer.id} variants={itemVariants}>
                   <StreamerCard
                     streamer={streamer}
                     onDelete={handleDelete}
@@ -496,6 +475,6 @@ function StreamersPage() {
           </Button>
         </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 }

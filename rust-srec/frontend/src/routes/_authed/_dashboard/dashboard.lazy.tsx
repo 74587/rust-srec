@@ -25,45 +25,18 @@ import { type I18n } from '@lingui/core';
 import { createLazyFileRoute, Link } from '@tanstack/react-router';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { motion, AnimatePresence, type Variants } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { formatRelativeTime } from '@/lib/date-utils';
 import { formatDuration } from '@/lib/format';
 import { useCallback, useMemo, memo, useState, useEffect } from 'react';
+import { containerVariants, itemVariants } from '@/lib/animation';
 
 const SKELETON_COUNT = 4;
 const GRID_4 = 'grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4';
 const GRID_STREAMERS =
   'grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
-
-// --- Animation variants ---
-
-/** Container: orchestrates staggered entry of children */
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.04,
-      delayChildren: 0.02,
-    },
-  },
-  exit: {
-    opacity: 0,
-    transition: { duration: 0.1 },
-  },
-};
-
-/** Each grid item fades + slides up */
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.15, ease: 'easeOut' },
-  },
-};
 
 // --- Skeleton components ---
 

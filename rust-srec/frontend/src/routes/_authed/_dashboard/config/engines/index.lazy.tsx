@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CardSkeleton } from '@/components/shared/card-skeleton';
 import { AlertCircle } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
+import { containerVariants, itemVariants } from '@/lib/animation';
 
 export const Route = createLazyFileRoute('/_authed/_dashboard/config/engines/')(
   {
@@ -49,9 +50,9 @@ function EnginesConfigPage() {
       {isLoading ? (
         <motion.div
           key="loading"
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          exit={{ opacity: 0, transition: { duration: 0.1 } }}
           className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           {[1, 2, 3, 4].map((i) => (
@@ -74,31 +75,17 @@ function EnginesConfigPage() {
         <motion.div
           key="list"
           className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
         >
-          {engines?.map((engine, index) => (
-            <motion.div
-              key={engine.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.3,
-                delay: Math.min(index * 0.05, 0.3),
-              }}
-            >
+          {engines?.map((engine) => (
+            <motion.div key={engine.id} variants={itemVariants}>
               <EngineCard engine={engine} />
             </motion.div>
           ))}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.3,
-              delay: Math.min((engines?.length || 0) * 0.05, 0.3),
-            }}
-          >
+          <motion.div variants={itemVariants}>
             <CreateEngineCard />
           </motion.div>
         </motion.div>

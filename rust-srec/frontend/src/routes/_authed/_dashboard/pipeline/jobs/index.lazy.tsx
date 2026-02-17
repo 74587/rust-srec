@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { containerVariants, itemVariants } from '@/lib/animation';
 import {
   Select,
   SelectContent,
@@ -88,9 +89,6 @@ function PipelineJobsPage() {
   // Local state for search input (for immediate UI feedback)
   const [localSearchQuery, setLocalSearchQuery] = useState(q ?? '');
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Track initial load to skip animations on pagination changes
-  const isInitialLoad = useRef(true);
 
   // Sync local search query when URL q changes (e.g., on navigation back)
   useEffect(() => {
@@ -216,13 +214,6 @@ function PipelineJobsPage() {
     refetchIntervalInBackground: false, // Pause polling when tab is hidden
     placeholderData: keepPreviousData,
   });
-
-  // Mark initial load as complete after first successful data fetch
-  useEffect(() => {
-    if (pipelinesData && isInitialLoad.current) {
-      isInitialLoad.current = false;
-    }
-  }, [pipelinesData]);
 
   const pipelines = pipelinesData?.dags || [];
   const totalPipelines = pipelinesData?.total || 0;
@@ -471,24 +462,13 @@ function PipelineJobsPage() {
             <motion.div
               key="list"
               className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
-              initial={isInitialLoad.current ? { opacity: 0 } : false}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              {pipelines.map((pipeline: any, index: number) => (
-                <motion.div
-                  key={pipeline.id}
-                  initial={
-                    isInitialLoad.current ? { opacity: 0, y: 20 } : false
-                  }
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.2,
-                    delay: isInitialLoad.current
-                      ? Math.min(index * 0.03, 0.15)
-                      : 0,
-                  }}
-                >
+              {pipelines.map((pipeline: any) => (
+                <motion.div key={pipeline.id} variants={itemVariants}>
                   <PipelineSummaryCard
                     pipeline={pipeline}
                     onCancelPipeline={handleCancelPipeline}
@@ -702,26 +682,40 @@ const LoadingSkeleton = memo(function LoadingSkeleton() {
   return (
     <motion.div
       key="loading"
-      initial={{ opacity: 0 }}
+      initial={false}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      exit={{ opacity: 0, transition: { duration: 0.1 } }}
       className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
     >
       {SKELETON_ITEMS.map((i) => (
         <div
           key={i}
-          className="h-[200px] border rounded-xl bg-muted/10 animate-pulse flex flex-col p-6 space-y-4 shadow-sm"
+          className="border rounded-xl bg-muted/10 animate-pulse flex flex-col shadow-sm overflow-hidden"
         >
-          <div className="flex justify-between items-start">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <Skeleton className="h-6 w-16" />
+          {/* CardHeader */}
+          <div className="flex items-center gap-4 p-4 sm:p-5 pb-3">
+            <Skeleton className="h-11 w-11 rounded-2xl shrink-0" />
+            <div className="flex-1 min-w-0 space-y-2.5">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-3 w-1/3" />
+            </div>
+            <Skeleton className="h-6 w-16 rounded-full shrink-0" />
           </div>
-          <div className="space-y-2 pt-2">
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+          {/* CardContent */}
+          <div className="flex-1 px-6 pb-6 pt-1 space-y-5">
+            <Skeleton className="h-3 w-3/5" />
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-7 w-18 rounded-md" />
+              <Skeleton className="h-7 w-18 rounded-md" />
+              <Skeleton className="h-7 w-18 rounded-md" />
+            </div>
+            <Skeleton className="h-3 w-2/5" />
+            <Skeleton className="h-12 w-full rounded-md" />
           </div>
-          <div className="pt-4 mt-auto">
-            <Skeleton className="h-8 w-full rounded-md" />
+          {/* CardFooter */}
+          <div className="flex justify-between items-center border-t border-border/20 px-6 py-4 bg-muted/5">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-10" />
           </div>
         </div>
       ))}

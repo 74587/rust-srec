@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { DashboardHeader } from '@/components/shared/dashboard-header';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { containerVariants, itemVariants } from '@/lib/animation';
 import {
   Select,
   SelectContent,
@@ -224,9 +225,9 @@ function PipelineOutputsPage() {
           {isLoading ? (
             <motion.div
               key="loading"
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -250,20 +251,13 @@ function PipelineOutputsPage() {
             <motion.div
               key="list"
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              {displayedOutputs.map((output, index) => (
-                <motion.div
-                  key={output.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.3,
-                    delay: Math.min(index * 0.05, 0.3),
-                  }}
-                >
+              {displayedOutputs.map((output) => (
+                <motion.div key={output.id} variants={itemVariants}>
                   <OutputCard output={output} />
                 </motion.div>
               ))}

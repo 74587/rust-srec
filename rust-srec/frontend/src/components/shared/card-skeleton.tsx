@@ -15,7 +15,7 @@ export function CardSkeleton({ children, className }: CardSkeletonProps) {
   return (
     <div
       className={cn(
-        'min-h-[220px] border rounded-xl bg-muted/10 animate-pulse flex flex-col p-6 space-y-4 shadow-sm overflow-hidden',
+        'border rounded-xl bg-muted/10 animate-pulse flex flex-col p-6 space-y-4 shadow-sm overflow-hidden',
         className,
       )}
     >

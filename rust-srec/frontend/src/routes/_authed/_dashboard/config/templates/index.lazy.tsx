@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
+import { containerVariants, itemVariants } from '@/lib/animation';
 import {
   Dialog,
   DialogContent,
@@ -151,9 +152,9 @@ function TemplatesConfigPage() {
         {isLoading ? (
           <motion.div
             key="loading"
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.1 } }}
             className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
           >
             {[1, 2, 3, 4].map((i) => (
@@ -164,20 +165,13 @@ function TemplatesConfigPage() {
           <motion.div
             key="list"
             className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
           >
-            {filteredTemplates.map((template, index) => (
-              <motion.div
-                key={template.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.3,
-                  delay: Math.min(index * 0.05, 0.3),
-                }}
-              >
+            {filteredTemplates.map((template) => (
+              <motion.div key={template.id} variants={itemVariants}>
                 <TemplateCard
                   template={template}
                   onEdit={() => handleEdit(template.id)}

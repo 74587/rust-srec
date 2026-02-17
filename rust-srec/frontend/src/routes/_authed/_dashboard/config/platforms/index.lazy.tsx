@@ -12,6 +12,7 @@ import { Trans } from '@lingui/react/macro';
 import { useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { useState, useEffect, useMemo } from 'react';
+import { containerVariants, itemVariants } from '@/lib/animation';
 
 export const Route = createLazyFileRoute(
   '/_authed/_dashboard/config/platforms/',
@@ -96,9 +97,9 @@ function PlatformsConfigPage() {
         {isLoading ? (
           <motion.div
             key="loading"
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.1 } }}
             className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
           >
             {[1, 2, 3, 4].map((i) => (
@@ -109,20 +110,13 @@ function PlatformsConfigPage() {
           <motion.div
             key="list"
             className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
           >
-            {filteredPlatforms.map((platform, index) => (
-              <motion.div
-                key={platform.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.3,
-                  delay: Math.min(index * 0.05, 0.3),
-                }}
-              >
+            {filteredPlatforms.map((platform) => (
+              <motion.div key={platform.id} variants={itemVariants}>
                 <PlatformCard
                   platform={platform}
                   onEdit={() => handleEdit(platform.id)}

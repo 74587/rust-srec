@@ -26,6 +26,7 @@ import { AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DashboardHeader } from '@/components/shared/dashboard-header';
+import { containerVariants, itemVariants } from '@/lib/animation';
 import {
   Select,
   SelectContent,
@@ -189,15 +190,15 @@ function WorkflowsPage() {
           {isLoading ? (
             <motion.div
               key="loading"
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-[200px] border rounded-xl bg-muted/10 animate-pulse flex flex-col p-6 space-y-4 shadow-sm"
+                  className="border rounded-xl bg-muted/10 animate-pulse flex flex-col p-6 space-y-4 shadow-sm overflow-hidden"
                 >
                   <div className="flex justify-between items-start">
                     <Skeleton className="h-10 w-10 rounded-full" />
@@ -217,20 +218,13 @@ function WorkflowsPage() {
             <motion.div
               key="list"
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              {workflows.map((workflow, index) => (
-                <motion.div
-                  key={workflow.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.3,
-                    delay: Math.min(index * 0.05, 0.3),
-                  }}
-                >
+              {workflows.map((workflow) => (
+                <motion.div key={workflow.id} variants={itemVariants}>
                   <WorkflowCard
                     workflow={workflow}
                     onEdit={handleEdit}

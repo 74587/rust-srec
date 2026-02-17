@@ -24,6 +24,7 @@ import { useLingui } from '@lingui/react';
 import { PresetCard } from '@/components/pipeline/presets/preset-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CardSkeleton } from '@/components/shared/card-skeleton';
+import { containerVariants, itemVariants } from '@/lib/animation';
 import {
   Dialog,
   DialogContent,
@@ -306,9 +307,9 @@ function PresetsPage() {
           {isLoading ? (
             <motion.div
               key="loading"
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
               {[1, 2, 3, 4].map((i) => (
@@ -331,20 +332,13 @@ function PresetsPage() {
             <motion.div
               key="list"
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              {presets.map((preset, index) => (
-                <motion.div
-                  key={preset.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.3,
-                    delay: Math.min(index * 0.05, 0.3), // Cap delay at 0.3s
-                  }}
-                >
+              {presets.map((preset) => (
+                <motion.div key={preset.id} variants={itemVariants}>
                   <PresetCard
                     preset={preset}
                     onEdit={handleEdit}
