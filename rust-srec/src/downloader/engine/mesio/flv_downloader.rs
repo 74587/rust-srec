@@ -320,6 +320,7 @@ mod tests {
             "http://example.invalid/stream.flv",
             temp.path().to_path_buf(),
             "streamer",
+            "streamer",
             "session",
         )
         .with_filename_template("test-flv");

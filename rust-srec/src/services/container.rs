@@ -2226,6 +2226,7 @@ impl ServiceContainer {
                     stream_url_selected.clone(),
                     output_dir.clone(),
                     streamer_id.clone(),
+                    streamer_name.clone(),
                     session_id.clone(),
                 )
                 .with_filename_template(

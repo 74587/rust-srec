@@ -284,6 +284,7 @@ pub enum DownloadManagerEvent {
     DownloadStarted {
         download_id: String,
         streamer_id: String,
+        streamer_name: String,
         session_id: String,
         engine_type: EngineType,
         cdn_host: String,
@@ -293,6 +294,7 @@ pub enum DownloadManagerEvent {
     Progress {
         download_id: String,
         streamer_id: String,
+        streamer_name: String,
         session_id: String,
         status: DownloadStatus,
         progress: DownloadProgress,
@@ -301,6 +303,7 @@ pub enum DownloadManagerEvent {
     SegmentStarted {
         download_id: String,
         streamer_id: String,
+        streamer_name: String,
         session_id: String,
         segment_path: String,
         segment_index: u32,
@@ -309,6 +312,7 @@ pub enum DownloadManagerEvent {
     SegmentCompleted {
         download_id: String,
         streamer_id: String,
+        streamer_name: String,
         session_id: String,
         segment_path: String,
         segment_index: u32,
@@ -319,6 +323,7 @@ pub enum DownloadManagerEvent {
     DownloadCompleted {
         download_id: String,
         streamer_id: String,
+        streamer_name: String,
         session_id: String,
         total_bytes: u64,
         total_duration_secs: f64,
@@ -329,6 +334,7 @@ pub enum DownloadManagerEvent {
     DownloadFailed {
         download_id: String,
         streamer_id: String,
+        streamer_name: String,
         session_id: String,
         kind: DownloadFailureKind,
         error: String,
@@ -338,6 +344,7 @@ pub enum DownloadManagerEvent {
     DownloadCancelled {
         download_id: String,
         streamer_id: String,
+        streamer_name: String,
         session_id: String,
         cause: DownloadStopCause,
     },
@@ -345,12 +352,14 @@ pub enum DownloadManagerEvent {
     ConfigUpdated {
         download_id: String,
         streamer_id: String,
+        streamer_name: String,
         update_type: ConfigUpdateType,
     },
     /// Configuration update failed to apply.
     ConfigUpdateFailed {
         download_id: String,
         streamer_id: String,
+        streamer_name: String,
         error: String,
     },
     /// Download was rejected before starting (e.g., circuit breaker open).
@@ -359,6 +368,7 @@ pub enum DownloadManagerEvent {
     /// No download_id is available because the download was never created.
     DownloadRejected {
         streamer_id: String,
+        streamer_name: String,
         session_id: String,
         reason: String,
         /// How long to wait before retrying (circuit breaker cooldown).
@@ -467,6 +477,7 @@ impl DownloadManager {
             // Emit rejection event for visibility
             let _ = self.event_tx.send(DownloadManagerEvent::DownloadRejected {
                 streamer_id: config.streamer_id.clone(),
+                streamer_name: config.streamer_name.clone(),
                 session_id: config.session_id.clone(),
                 reason: format!("Circuit breaker open for engine {}", engine_key),
                 retry_after_secs: Some(self.config.read().circuit_breaker_cooldown_secs),
@@ -770,6 +781,7 @@ impl DownloadManager {
         let _ = self.event_tx.send(DownloadManagerEvent::DownloadStarted {
             download_id: download_id.clone(),
             streamer_id: config.streamer_id.clone(),
+            streamer_name: config.streamer_name.clone(),
             session_id: config.session_id.clone(),
             engine_type,
             cdn_host,
@@ -801,6 +813,7 @@ impl DownloadManager {
         let download_id_clone = download_id.clone();
         let event_tx = self.event_tx.clone();
         let streamer_id = config.streamer_id.clone();
+        let streamer_name = config.streamer_name.clone();
         let session_id = config.session_id.clone();
 
         // Clone references for the spawned task
@@ -832,6 +845,7 @@ impl DownloadManager {
                         let _ = event_tx.send(DownloadManagerEvent::SegmentCompleted {
                             download_id: download_id_clone.clone(),
                             streamer_id: streamer_id.clone(),
+                            streamer_name: streamer_name.clone(),
                             session_id: session_id.clone(),
                             segment_path: segment_path.clone(),
                             segment_index: index,
@@ -860,6 +874,7 @@ impl DownloadManager {
                             let _ = event_tx.send(DownloadManagerEvent::Progress {
                                 download_id: download_id_clone.clone(),
                                 streamer_id: streamer_id.clone(),
+                                streamer_name: streamer_name.clone(),
                                 session_id: session_id.clone(),
                                 status: DownloadStatus::Downloading,
                                 progress,
@@ -880,6 +895,7 @@ impl DownloadManager {
                             let _ = event_tx.send(DownloadManagerEvent::Progress {
                                 download_id: download_id_clone.clone(),
                                 streamer_id: streamer_id.clone(),
+                                streamer_name: streamer_name.clone(),
                                 session_id: session_id.clone(),
                                 status: DownloadStatus::Downloading,
                                 progress: final_progress,
@@ -906,6 +922,7 @@ impl DownloadManager {
                         let _ = event_tx.send(DownloadManagerEvent::DownloadCompleted {
                             download_id: download_id_clone.clone(),
                             streamer_id: streamer_id.clone(),
+                            streamer_name: streamer_name.clone(),
                             session_id: session_id.clone(),
                             total_bytes,
                             total_duration_secs,
@@ -932,6 +949,7 @@ impl DownloadManager {
                             let _ = event_tx.send(DownloadManagerEvent::Progress {
                                 download_id: download_id_clone.clone(),
                                 streamer_id: streamer_id.clone(),
+                                streamer_name: streamer_name.clone(),
                                 session_id: session_id.clone(),
                                 status: DownloadStatus::Downloading,
                                 progress: final_progress,
@@ -949,6 +967,7 @@ impl DownloadManager {
                         let _ = event_tx.send(DownloadManagerEvent::DownloadFailed {
                             download_id: download_id_clone.clone(),
                             streamer_id: streamer_id.clone(),
+                            streamer_name: streamer_name.clone(),
                             session_id: session_id.clone(),
                             kind,
                             error: message,
@@ -964,6 +983,7 @@ impl DownloadManager {
                         let _ = event_tx.send(DownloadManagerEvent::SegmentStarted {
                             download_id: download_id_clone.clone(),
                             streamer_id: streamer_id.clone(),
+                            streamer_name: streamer_name.clone(),
                             session_id: session_id.clone(),
                             segment_path: segment_path.clone(),
                             segment_index: sequence,
@@ -1011,11 +1031,18 @@ impl DownloadManager {
         if let Some((_, download)) = self.active_downloads.remove(download_id) {
             let engine_type = download.handle.engine_type;
 
+            // Snapshot config once to avoid repeated lock acquisitions.
+            let config_snap = download.handle.config_snapshot();
+            let streamer_id = config_snap.streamer_id;
+            let streamer_name = config_snap.streamer_name;
+            let session_id = config_snap.session_id;
+
             // Emit one final progress update before cancellation.
             let _ = self.event_tx.send(DownloadManagerEvent::Progress {
                 download_id: download_id.to_string(),
-                streamer_id: download.handle.config_snapshot().streamer_id.clone(),
-                session_id: download.handle.config_snapshot().session_id.clone(),
+                streamer_id: streamer_id.clone(),
+                streamer_name: streamer_name.clone(),
+                session_id: session_id.clone(),
                 status: DownloadStatus::Cancelled,
                 progress: download.progress.clone(),
             });
@@ -1024,15 +1051,14 @@ impl DownloadManager {
                 engine.stop(&download.handle).await?;
             }
 
-            let streamer_id = download.handle.config_snapshot().streamer_id;
-
             self.pending_updates.remove(download_id);
 
             // Broadcast send is synchronous, ignore if no receivers
             let _ = self.event_tx.send(DownloadManagerEvent::DownloadCancelled {
                 download_id: download_id.to_string(),
-                streamer_id: streamer_id.clone(),
-                session_id: download.handle.config_snapshot().session_id,
+                streamer_id,
+                streamer_name,
+                session_id,
                 cause,
             });
 
@@ -1294,9 +1320,16 @@ impl DownloadManager {
 
         let update_type = Self::determine_config_update_type(update);
 
+        let streamer_name = self
+            .active_downloads
+            .get(download_id)
+            .map(|d| d.handle.config.read().streamer_name.clone())
+            .unwrap_or_else(|| streamer_id.to_string());
+
         let event = DownloadManagerEvent::ConfigUpdated {
             download_id: download_id.to_string(),
             streamer_id: streamer_id.to_string(),
+            streamer_name,
             update_type,
         };
 
@@ -1337,9 +1370,16 @@ impl DownloadManager {
         streamer_id: &str,
         error: &str,
     ) -> bool {
+        let streamer_name = self
+            .active_downloads
+            .get(download_id)
+            .map(|d| d.handle.config.read().streamer_name.clone())
+            .unwrap_or_else(|| streamer_id.to_string());
+
         let event = DownloadManagerEvent::ConfigUpdateFailed {
             download_id: download_id.to_string(),
             streamer_id: streamer_id.to_string(),
+            streamer_name,
             error: error.to_string(),
         };
 
@@ -1430,9 +1470,11 @@ impl DownloadManager {
 
         if applied {
             let update_type = Self::determine_config_update_type(&update_clone);
+            let streamer_name = download.handle.config.read().streamer_name.clone();
             let _ = event_tx.send(DownloadManagerEvent::ConfigUpdated {
                 download_id: download_id.to_string(),
                 streamer_id: streamer_id.to_string(),
+                streamer_name,
                 update_type,
             });
         }
@@ -1645,6 +1687,7 @@ mod tests {
                 download_id,
                 streamer_id,
                 update_type,
+                ..
             } => {
                 assert_eq!(download_id, "download-123");
                 assert_eq!(streamer_id, "streamer-456");
@@ -1682,6 +1725,7 @@ mod tests {
                 download_id,
                 streamer_id,
                 error,
+                ..
             } => {
                 assert_eq!(download_id, "download-123");
                 assert_eq!(streamer_id, "streamer-456");

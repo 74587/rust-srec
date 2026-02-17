@@ -1534,23 +1534,25 @@ impl NotificationService {
                                 let notification = match event {
                                     DownloadManagerEvent::DownloadStarted {
                                         streamer_id,
+                                        streamer_name,
                                         session_id,
                                         ..
                                     } => Some(NotificationEvent::DownloadStarted {
-                                        streamer_id: streamer_id.clone(),
-                                        streamer_name: streamer_id, // TODO: Get name from manager
+                                        streamer_id,
+                                        streamer_name,
                                         session_id,
                                         timestamp: Utc::now(),
                                     }),
                                     DownloadManagerEvent::DownloadCompleted {
                                         streamer_id,
+                                        streamer_name,
                                         session_id,
                                         total_bytes,
                                         total_duration_secs,
                                         ..
                                     } => Some(NotificationEvent::DownloadCompleted {
-                                        streamer_id: streamer_id.clone(),
-                                        streamer_name: streamer_id,
+                                        streamer_id,
+                                        streamer_name,
                                         session_id,
                                         file_size_bytes: total_bytes,
                                         duration_secs: total_duration_secs,
@@ -1558,25 +1560,27 @@ impl NotificationService {
                                     }),
                                     DownloadManagerEvent::DownloadFailed {
                                         streamer_id,
+                                        streamer_name,
                                         error,
                                         recoverable,
                                         ..
                                     } => Some(NotificationEvent::DownloadError {
-                                        streamer_id: streamer_id.clone(),
-                                        streamer_name: streamer_id,
+                                        streamer_id,
+                                        streamer_name,
                                         error_message: error,
                                         recoverable,
                                         timestamp: Utc::now(),
                                     }),
                                     DownloadManagerEvent::SegmentStarted {
                                         streamer_id,
+                                        streamer_name,
                                         session_id,
                                         segment_path,
                                         segment_index,
                                         ..
                                     } => Some(NotificationEvent::SegmentStarted {
-                                        streamer_id: streamer_id.clone(),
-                                        streamer_name: streamer_id,
+                                        streamer_id,
+                                        streamer_name,
                                         session_id,
                                         segment_path,
                                         segment_index,
@@ -1584,6 +1588,7 @@ impl NotificationService {
                                     }),
                                     DownloadManagerEvent::SegmentCompleted {
                                         streamer_id,
+                                        streamer_name,
                                         session_id,
                                         segment_path,
                                         segment_index,
@@ -1591,8 +1596,8 @@ impl NotificationService {
                                         size_bytes,
                                         ..
                                     } => Some(NotificationEvent::SegmentCompleted {
-                                        streamer_id: streamer_id.clone(),
-                                        streamer_name: streamer_id,
+                                        streamer_id,
+                                        streamer_name,
                                         session_id,
                                         segment_path,
                                         segment_index,
@@ -1602,33 +1607,36 @@ impl NotificationService {
                                     }),
                                     DownloadManagerEvent::DownloadCancelled {
                                         streamer_id,
+                                        streamer_name,
                                         session_id,
                                         ..
                                     } => Some(NotificationEvent::DownloadCancelled {
-                                        streamer_id: streamer_id.clone(),
-                                        streamer_name: streamer_id.clone(),
+                                        streamer_id,
+                                        streamer_name,
                                         session_id,
                                         timestamp: Utc::now(),
                                     }),
                                     DownloadManagerEvent::DownloadRejected {
                                         streamer_id,
+                                        streamer_name,
                                         session_id,
                                         reason,
                                         ..
                                     } => Some(NotificationEvent::DownloadRejected {
-                                        streamer_id: streamer_id.clone(),
-                                        streamer_name: streamer_id,
+                                        streamer_id,
+                                        streamer_name,
                                         session_id,
                                         reason,
                                         timestamp: Utc::now(),
                                     }),
                                     DownloadManagerEvent::ConfigUpdated {
                                         streamer_id,
+                                        streamer_name,
                                         update_type,
                                         ..
                                     } => Some(NotificationEvent::ConfigUpdated {
-                                        streamer_id: streamer_id.clone(),
-                                        streamer_name: streamer_id,
+                                        streamer_id,
+                                        streamer_name,
                                         update_type: format!("{:?}", update_type),
                                         timestamp: Utc::now(),
                                     }),
