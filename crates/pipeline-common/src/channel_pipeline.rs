@@ -118,6 +118,9 @@ where
                             };
 
                             if let Err(e) = processor.process(&context, item, &mut output_fn) {
+                                if matches!(e, PipelineError::Cancelled) {
+                                    return Err(PipelineError::Cancelled);
+                                }
                                 error!(processor = processor_name, error = ?e, "Processor failed");
                                 let msg = e.to_string();
                                 // Channel gets the original typed error; task return gets a string copy
@@ -154,6 +157,9 @@ where
                 };
 
                 if let Err(e) = processor.finish(&context, &mut output_fn) {
+                    if matches!(e, PipelineError::Cancelled) {
+                        return Err(PipelineError::Cancelled);
+                    }
                     error!(processor = processor_name, error = ?e, "Processor finish failed");
                     let msg = e.to_string();
                     // Channel gets the original typed error; task return gets a string copy

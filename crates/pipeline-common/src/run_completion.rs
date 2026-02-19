@@ -33,6 +33,7 @@ pub async fn settle_run<WriterOut, WriterErr>(
 
         if writer_ok
             && let Err(err) = task_result
+            && !matches!(err, PipelineError::Cancelled)
             && first_pipeline_error.is_none()
         {
             first_pipeline_error = Some(err);
@@ -83,5 +84,26 @@ mod tests {
             }
             other => panic!("expected writer error, got {:?}", other),
         }
+    }
+
+    #[tokio::test]
+    async fn settle_run_treats_cancelled_as_success() {
+        let tasks = vec![tokio::spawn(async { Err(PipelineError::Cancelled) })];
+        let result = settle_run::<usize, ()>(Ok(42), tasks).await;
+        assert!(matches!(result, Ok(42)));
+    }
+
+    #[tokio::test]
+    async fn settle_run_reports_real_error_even_with_cancelled() {
+        let tasks = vec![
+            tokio::spawn(async { Err(PipelineError::Cancelled) }),
+            tokio::spawn(async {
+                Err(PipelineError::Strategy(Box::new(std::io::Error::other(
+                    "real error",
+                ))))
+            }),
+        ];
+        let result = settle_run::<usize, ()>(Ok(42), tasks).await;
+        assert!(matches!(result, Err(RunCompletionError::Pipeline(_))));
     }
 }
