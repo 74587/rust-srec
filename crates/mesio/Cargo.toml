@@ -1,9 +1,9 @@
 [package]
 name = "mesio-engine"
 version = "0.2.0"
-edition = "2024"
+edition.workspace = true
 description = "Mesio (media) streaming downloader engine"
-license = "MIT OR Apache-2.0"
+license.workspace = true
 repository = "https://github.com/hua0512/rust-srec"
 
 [dependencies]
@@ -28,7 +28,6 @@ m3u8-rs = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
-humansize = "2.0.0"
 rand = { workspace = true }
 parking_lot = { workspace = true }
 rustls = { workspace = true }

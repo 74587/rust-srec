@@ -171,10 +171,7 @@ impl MediaOutputDbModel {
 }
 
 /// Media file types.
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::Display, strum::EnumString,
-)]
-#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum MediaFileType {
     Video,
@@ -204,6 +201,12 @@ impl MediaFileType {
     }
 }
 
+impl std::fmt::Display for MediaFileType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// Danmu statistics database model.
 /// Aggregated statistics for danmu messages collected during a live session.
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
@@ -215,7 +218,7 @@ pub struct DanmuStatisticsDbModel {
     pub danmu_rate_timeseries: Option<String>,
     /// JSON array of top 10 most active users
     pub top_talkers: Option<String>,
-    /// JSON map of word frequencies
+    /// JSON array of word-frequency entries
     pub word_frequency: Option<String>,
 }
 
@@ -227,7 +230,7 @@ impl DanmuStatisticsDbModel {
             total_danmus: 0,
             danmu_rate_timeseries: Some("[]".to_string()),
             top_talkers: Some("[]".to_string()),
-            word_frequency: Some("{}".to_string()),
+            word_frequency: Some("[]".to_string()),
         }
     }
 }

@@ -1,6 +1,7 @@
 //! Worker pool implementation for pipeline processing.
 
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
@@ -12,7 +13,7 @@ use super::dag_scheduler::{
     DagCompletionInfo, DagJobCompletedUpdate, DagJobFailedUpdate, DagScheduler,
 };
 use super::job_queue::{JobExecutionInfo, JobQueue, JobResult};
-use super::processors::{Processor, ProcessorContext, ProcessorInput};
+use super::processors::{JobLogSink, Processor, ProcessorContext, ProcessorInput};
 
 /// Type of worker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -462,21 +463,135 @@ impl WorkerPool {
                                 created_at: job.created_at,
                             };
 
-                            let (log_tx, mut log_rx) = tokio::sync::mpsc::channel(100);
+                            let (log_tx, mut log_rx) = tokio::sync::mpsc::channel(1024);
+                            let log_dropped = Arc::new(AtomicUsize::new(0));
+                            let log_sink = JobLogSink::new(log_tx, log_dropped.clone());
                             let job_queue_clone = job_queue.clone();
                             let job_id_clone = job_id.clone();
 
                             // Spawn log collector task
                             let log_collector = tokio::spawn(async move {
-                                while let Some(entry) = log_rx.recv().await {
-                                    if let Err(e) = job_queue_clone
-                                        .append_log_entry(&job_id_clone, &[entry])
-                                        .await
-                                    {
-                                        warn!(
-                                            "Failed to append streaming log for job {}: {}",
-                                            job_id_clone, e
-                                        );
+                                const FLUSH_INTERVAL_MS: u64 = 200;
+                                const MAX_BATCH_SIZE: usize = 1000;
+                                const MAX_BUFFERED_LOGS: usize = 4000;
+
+                                let mut flush_timer =
+                                    tokio::time::interval(std::time::Duration::from_millis(
+                                        FLUSH_INTERVAL_MS,
+                                    ));
+                                flush_timer
+                                    .set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+                                let mut buffer: VecDeque<super::job_queue::JobLogEntry> =
+                                    VecDeque::with_capacity(MAX_BATCH_SIZE);
+                                let mut dropped_due_to_backpressure: usize = 0;
+
+                                let mut backoff = std::time::Duration::ZERO;
+                                let mut next_flush_allowed = tokio::time::Instant::now();
+
+                                async fn flush(
+                                    job_queue: &super::job_queue::JobQueue,
+                                    job_id: &str,
+                                    buffer: &mut VecDeque<super::job_queue::JobLogEntry>,
+                                    backoff: &mut std::time::Duration,
+                                    next_flush_allowed: &mut tokio::time::Instant,
+                                    force: bool,
+                                ) {
+                                    if buffer.is_empty() {
+                                        return;
+                                    }
+                                    if !force && tokio::time::Instant::now() < *next_flush_allowed {
+                                        return;
+                                    }
+
+                                    let slice = buffer.make_contiguous();
+                                    match job_queue.append_log_entry(job_id, slice).await {
+                                        Ok(()) => {
+                                            buffer.clear();
+                                            *backoff = std::time::Duration::ZERO;
+                                            *next_flush_allowed = tokio::time::Instant::now();
+                                        }
+                                        Err(e) => {
+                                            warn!(
+                                                "Failed to append streaming logs for job {}: {}",
+                                                job_id, e
+                                            );
+                                            *backoff = if backoff.is_zero() {
+                                                std::time::Duration::from_millis(200)
+                                            } else {
+                                                (*backoff * 2).min(std::time::Duration::from_secs(5))
+                                            };
+                                            *next_flush_allowed = tokio::time::Instant::now() + *backoff;
+                                        }
+                                    }
+                                }
+
+                                loop {
+                                    tokio::select! {
+                                        entry = log_rx.recv() => {
+                                            match entry {
+                                                Some(entry) => {
+                                                    buffer.push_back(entry);
+
+                                                    if buffer.len() > MAX_BUFFERED_LOGS {
+                                                        while buffer.len() > MAX_BUFFERED_LOGS {
+                                                            let _ = buffer.pop_front();
+                                                            dropped_due_to_backpressure = dropped_due_to_backpressure.saturating_add(1);
+                                                        }
+                                                    }
+
+                                                    if buffer.len() >= MAX_BATCH_SIZE {
+                                                        flush(
+                                                            &job_queue_clone,
+                                                            &job_id_clone,
+                                                            &mut buffer,
+                                                            &mut backoff,
+                                                            &mut next_flush_allowed,
+                                                            false,
+                                                        )
+                                                        .await;
+                                                    }
+                                                }
+                                                None => {
+                                                    let producer_dropped = log_dropped.load(Ordering::Relaxed);
+                                                    if dropped_due_to_backpressure > 0 {
+                                                        buffer.push_back(super::job_queue::JobLogEntry::warn(format!(
+                                                            "Dropped {} log lines due to DB backpressure (buffer_cap={})",
+                                                            dropped_due_to_backpressure,
+                                                            MAX_BUFFERED_LOGS,
+                                                        )));
+                                                    }
+                                                    if producer_dropped > 0 {
+                                                        buffer.push_back(super::job_queue::JobLogEntry::warn(format!(
+                                                            "Dropped {} log lines due to log channel backpressure (capacity={})",
+                                                            producer_dropped,
+                                                            1024,
+                                                        )));
+                                                    }
+                                                    flush(
+                                                        &job_queue_clone,
+                                                        &job_id_clone,
+                                                        &mut buffer,
+                                                        &mut backoff,
+                                                        &mut next_flush_allowed,
+                                                        true,
+                                                    )
+                                                    .await;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        _ = flush_timer.tick() => {
+                                            flush(
+                                                &job_queue_clone,
+                                                &job_id_clone,
+                                                &mut buffer,
+                                                &mut backoff,
+                                                &mut next_flush_allowed,
+                                                false,
+                                            )
+                                            .await;
+                                        }
                                     }
                                 }
                             });
@@ -496,7 +611,7 @@ impl WorkerPool {
                             let ctx = ProcessorContext::new(
                                 job_id.clone(),
                                 job_queue.progress_reporter(&job_id),
-                                log_tx,
+                                log_sink,
                                 job_cancellation_token.clone(),
                             );
 
@@ -705,6 +820,8 @@ impl WorkerPool {
                                     }
 
                                     if !job_cancellation_token.is_cancelled() {
+                                    job_cancellation_token.cancel();
+
                                     // Check if this is a DAG job for fail-fast handling
                                     if let Some(dag_step_id) = dag_step_execution_id.as_deref() {
                                         // First mark job as failed
@@ -925,14 +1042,13 @@ impl WorkerPool {
 async fn cleanup_partial_outputs(outputs: &[String]) {
     for output in outputs {
         let path = std::path::Path::new(output);
-        if path.exists() {
-            match tokio::fs::remove_file(path).await {
-                Ok(_) => {
-                    info!("Cleaned up partial output: {}", output);
-                }
-                Err(e) => {
-                    warn!("Failed to clean up partial output {}: {}", output, e);
-                }
+        match tokio::fs::remove_file(path).await {
+            Ok(()) => {
+                info!("Cleaned up partial output: {}", output);
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => {
+                warn!("Failed to clean up partial output {}: {}", output, e);
             }
         }
     }
@@ -943,6 +1059,7 @@ mod tests {
     use super::*;
     use async_trait::async_trait;
     use std::time::Duration;
+    use tempfile::TempDir;
 
     use crate::pipeline::{Job, JobStatus, ProcessorOutput, ProcessorType};
 
@@ -969,6 +1086,53 @@ mod tests {
 
         fn name(&self) -> &'static str {
             "sleep"
+        }
+    }
+
+    struct TimeoutPublishProcessor;
+
+    #[async_trait]
+    impl Processor for TimeoutPublishProcessor {
+        fn processor_type(&self) -> ProcessorType {
+            ProcessorType::Cpu
+        }
+
+        fn job_types(&self) -> Vec<&'static str> {
+            vec!["timeout-publish"]
+        }
+
+        async fn process(
+            &self,
+            input: &ProcessorInput,
+            ctx: &ProcessorContext,
+        ) -> crate::Result<ProcessorOutput> {
+            let output_path =
+                input.outputs.first().cloned().ok_or_else(|| {
+                    crate::Error::PipelineError("missing output path".to_string())
+                })?;
+
+            let token = ctx.cancellation_token.clone();
+            let output_path_for_blocking = output_path.clone();
+            tokio::task::spawn_blocking(move || {
+                std::thread::sleep(Duration::from_millis(1500));
+                if token.is_cancelled() {
+                    return Ok::<_, std::io::Error>(());
+                }
+                std::fs::write(&output_path_for_blocking, b"published")?;
+                Ok(())
+            })
+            .await
+            .map_err(|e| crate::Error::Other(format!("blocking task panicked: {}", e)))??;
+
+            Ok(ProcessorOutput {
+                outputs: vec![output_path.clone()],
+                items_produced: vec![output_path],
+                ..Default::default()
+            })
+        }
+
+        fn name(&self) -> &'static str {
+            "timeout-publish"
         }
     }
 
@@ -1044,6 +1208,53 @@ mod tests {
 
         let job = job_queue.get_job(&job_id).await.unwrap().unwrap();
         assert_eq!(job.status, JobStatus::Interrupted);
+
+        pool.stop().await;
+    }
+
+    #[tokio::test]
+    async fn test_timeout_cancels_job_token_prevents_publish() {
+        let dir = TempDir::new().unwrap();
+        let output_path = dir.path().join("published.txt");
+        let output_str = output_path.to_string_lossy().to_string();
+
+        let job_queue = Arc::new(JobQueue::new());
+        let pool = WorkerPool::with_config(
+            WorkerType::Cpu,
+            WorkerPoolConfig {
+                max_workers: 1,
+                job_timeout_secs: 1,
+                poll_interval_ms: 10,
+                adaptive: AdaptiveWorkerPoolConfig::default(),
+            },
+        );
+
+        pool.start(job_queue.clone(), vec![Arc::new(TimeoutPublishProcessor)]);
+
+        let job = Job::new(
+            "timeout-publish",
+            vec!["/input".to_string()],
+            vec![output_str.clone()],
+            "streamer-1",
+            "session-1",
+        );
+        let job_id = job_queue.enqueue(job).await.unwrap();
+
+        tokio::time::timeout(Duration::from_secs(3), async {
+            loop {
+                if let Some(job) = job_queue.get_job(&job_id).await.unwrap()
+                    && job.status == JobStatus::Failed
+                {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("job should time out and fail");
+
+        tokio::time::sleep(Duration::from_secs(2)).await;
+        assert!(!output_path.exists());
 
         pool.stop().await;
     }

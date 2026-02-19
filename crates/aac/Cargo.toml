@@ -1,11 +1,10 @@
 [package]
 name = "aac"
 version = "0.1.1"
-edition = "2024"
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
-num-traits = "0.2"
-num-derive = "0.4"
 bytes-util = { path = "../bytes-util" }
 
 [lints.rust]
